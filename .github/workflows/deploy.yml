@@ -44,8 +44,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin gh-pages 2>/dev/null || true
-          git worktree add /tmp/gh-pages gh-pages 2>/dev/null || \
-            git worktree add --orphan /tmp/gh-pages gh-pages
+          if git worktree add /tmp/gh-pages gh-pages 2>/dev/null; then
+            echo "Using existing gh-pages branch"
+          else
+            git worktree add --orphan -b gh-pages /tmp/gh-pages
+          fi
           rm -rf /tmp/gh-pages/*
           cp -r dist/* /tmp/gh-pages/
           cd /tmp/gh-pages
