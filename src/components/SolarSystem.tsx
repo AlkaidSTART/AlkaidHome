@@ -149,19 +149,67 @@ const coreVertexShader = `
 
 /* ─── 3D Components ─── */
 
+function DiscBase({
+  rx,
+  ry,
+  color,
+}: {
+  rx: number;
+  ry: number;
+  color: string;
+}) {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  const geometry = useMemo(() => {
+    const shape = new THREE.Shape();
+    const segments = 128;
+    for (let i = 0; i <= segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      const x = Math.cos(angle) * rx;
+      const z = Math.sin(angle) * ry;
+      if (i === 0) shape.moveTo(x, z);
+      else shape.lineTo(x, z);
+    }
+    return new THREE.ShapeGeometry(shape);
+  }, [rx, ry]);
+
+  const c = new THREE.Color(color);
+
+  return (
+    <mesh
+      ref={meshRef}
+      geometry={geometry}
+      rotation={[0, 0, 0]}
+      position={[0, 0, -0.02]}
+    >
+      <meshBasicMaterial
+        color={c}
+        transparent
+        opacity={0.06}
+        side={THREE.DoubleSide}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </mesh>
+  );
+}
+
 function OrbitRing({
   rx,
   ry,
   hovered,
+  color,
 }: {
   rx: number;
   ry: number;
   hovered: boolean;
+  color: string;
 }) {
+  // Main orbit line
   const points = useMemo(() => {
     const pts: THREE.Vector3[] = [];
-    for (let i = 0; i <= 128; i++) {
-      const angle = (i / 128) * Math.PI * 2;
+    for (let i = 0; i <= 256; i++) {
+      const angle = (i / 256) * Math.PI * 2;
       pts.push(
         new THREE.Vector3(Math.cos(angle) * rx, 0, Math.sin(angle) * ry),
       );
@@ -174,21 +222,98 @@ function OrbitRing({
     [points],
   );
 
+  // Glow ring (slightly larger, for disc effect)
+  const glowPoints = useMemo(() => {
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 256; i++) {
+      const angle = (i / 256) * Math.PI * 2;
+      pts.push(
+        new THREE.Vector3(
+          Math.cos(angle) * rx * 1.02,
+          0,
+          Math.sin(angle) * ry * 1.02,
+        ),
+      );
+    }
+    return pts;
+  }, [rx, ry]);
+
+  const glowGeometry = useMemo(
+    () => new THREE.BufferGeometry().setFromPoints(glowPoints),
+    [glowPoints],
+  );
+
+  // Inner subtle ring
+  const innerPoints = useMemo(() => {
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 256; i++) {
+      const angle = (i / 256) * Math.PI * 2;
+      pts.push(
+        new THREE.Vector3(
+          Math.cos(angle) * rx * 0.98,
+          0,
+          Math.sin(angle) * ry * 0.98,
+        ),
+      );
+    }
+    return pts;
+  }, [rx, ry]);
+
+  const innerGeometry = useMemo(
+    () => new THREE.BufferGeometry().setFromPoints(innerPoints),
+    [innerPoints],
+  );
+
+  const c = new THREE.Color(color);
+  const baseColor = hovered
+    ? new THREE.Color(0x4f46e5)
+    : new THREE.Color(0x1e1b4b);
+  const glowColor = hovered
+    ? new THREE.Color(c.r * 0.8, c.g * 0.8, c.b * 0.8)
+    : new THREE.Color(0x0f0f23);
+
   return (
-    <primitive
-      object={
-        new THREE.Line(
-          geometry,
-          new THREE.LineBasicMaterial({
-            color: hovered
-              ? new THREE.Color(0x4f46e5)
-              : new THREE.Color(0x1e1b4b),
-            transparent: true,
-            opacity: hovered ? 0.5 : 0.2,
-          }),
-        )
-      }
-    />
+    <group>
+      {/* Inner subtle ring */}
+      <primitive
+        object={
+          new THREE.Line(
+            innerGeometry,
+            new THREE.LineBasicMaterial({
+              color: glowColor,
+              transparent: true,
+              opacity: hovered ? 0.25 : 0.08,
+            }),
+          )
+        }
+      />
+      {/* Main orbit line */}
+      <primitive
+        object={
+          new THREE.Line(
+            geometry,
+            new THREE.LineBasicMaterial({
+              color: baseColor,
+              transparent: true,
+              opacity: hovered ? 0.7 : 0.3,
+            }),
+          )
+        }
+      />
+      {/* Outer glow ring */}
+      <primitive
+        object={
+          new THREE.Line(
+            glowGeometry,
+            new THREE.LineBasicMaterial({
+              color: glowColor,
+              transparent: true,
+              opacity: hovered ? 0.2 : 0.06,
+            }),
+          )
+        }
+      />
+    </group>
   );
 }
 
@@ -268,11 +393,15 @@ function Planet({
 
     const x = Math.cos(planetAngle) * config.rx;
     const z = Math.sin(planetAngle) * config.ry;
+    // Y position follows the tilted plane: y = -z * tan(tilt)
+    // When z is positive (bottom of screen), y is negative (closer to camera in tilted space)
+    const tiltAngle = Math.PI / 3.5;
+    const y = -z * Math.sin(tiltAngle);
     const depth = Math.sin(planetAngle);
 
     const scale = 0.85 + (depth + 1) * 0.15;
 
-    groupRef.current.position.set(x, 0, z);
+    groupRef.current.position.set(x, y, z);
     groupRef.current.scale.setScalar(scale * (isHovered ? 1.1 : 1.0));
 
     // Very slow planet rotation
@@ -639,15 +768,25 @@ function Scene({
   const { camera } = useThree();
 
   useEffect(() => {
-    // Front-facing view - much more comfortable
-    camera.position.set(0, 4, 14);
+    // Front view looking at the tilted disc (bottom wider, top narrower)
+    camera.position.set(0, 1, 14);
     camera.lookAt(0, 0, 0);
   }, [camera]);
 
   return (
-    <group rotation={[-Math.PI / 12, 0, 0]}>
+    <group rotation={[Math.PI / 3.5, 0, 0]}>
       {/* Core - AlkaidSTART */}
       <Core onHover={onCoreHover} />
+
+      {/* Disc bases for 2.5D effect */}
+      {PLANETS_CONFIG.map((planet) => (
+        <DiscBase
+          key={`disc-${planet.id}`}
+          rx={planet.rx}
+          ry={planet.ry}
+          color={planet.hexColor}
+        />
+      ))}
 
       {/* Orbits */}
       {PLANETS_CONFIG.map((planet) => (
@@ -656,6 +795,7 @@ function Scene({
           rx={planet.rx}
           ry={planet.ry}
           hovered={hoveredPlanetId === planet.id}
+          color={planet.hexColor}
         />
       ))}
 
@@ -722,11 +862,13 @@ function PlanetLabel({
       const z = Math.sin(planetAngle) * config.ry;
       const depth = Math.sin(planetAngle);
 
-      // Front-facing projection
+      // Tilted disc projection (bottom wider, top narrower)
       const distance = 14;
-      const tilt = -Math.PI / 12;
-      const projectedY = (x * Math.sin(tilt)) / (distance - z * Math.cos(tilt));
-      const projectedX = (x * Math.cos(tilt)) / (distance - z * Math.cos(tilt));
+      const tilt = Math.PI / 3.5; // Same tilt as Scene group
+      // For tilted disc: y in world follows the plane, project to screen
+      const worldY = -z * Math.sin(tilt);
+      const projectedY = worldY / (distance - z * Math.cos(tilt));
+      const projectedX = x / (distance - z * Math.cos(tilt));
 
       const screenX = 50 + projectedX * 25;
       const screenY = 50 - projectedY * 25;
