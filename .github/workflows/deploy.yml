@@ -44,7 +44,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin gh-pages 2>/dev/null || true
-          if git worktree add /tmp/gh-pages gh-pages 2>/dev/null; then
+          if git worktree add /tmp/gh-pages origin/gh-pages 2>/dev/null; then
             echo "Using existing gh-pages branch"
           else
             git worktree add --orphan -b gh-pages /tmp/gh-pages
@@ -57,5 +57,5 @@ jobs:
             echo "No changes to deploy"
           else
             git commit -m "Deploy ${GITHUB_SHA}"
-            git push origin gh-pages
+            git push --force origin gh-pages
           fi
