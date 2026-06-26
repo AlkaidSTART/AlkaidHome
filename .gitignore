@@ -12,8 +12,7 @@ dist
 dist-ssr
 *.local
 
-# Lockfile - generated in CI
-pnpm-lock.yaml
+
 
 # Editor directories and files
 .vscode/*
