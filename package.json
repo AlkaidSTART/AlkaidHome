@@ -7,12 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview",
-    "preinstall": "echo 'minimum-release-age=0' >> .npmrc"
-  },
-  "pnpm": {
-    "minimumReleaseAge": 0,
-    "onlyBuiltDependencies": []
+    "preview": "vite preview"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
