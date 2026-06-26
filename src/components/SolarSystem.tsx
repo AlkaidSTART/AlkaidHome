@@ -147,111 +147,6 @@ const coreVertexShader = `
   }
 `;
 
-const coreFragmentShader = `
-  uniform float uTime;
-  varying vec3 vNormal;
-  varying vec3 vPosition;
-
-  void main() {
-    vec3 viewDir = normalize(-vPosition);
-    float fresnel = pow(1.0 - dot(vNormal, viewDir), 3.0);
-
-    // Very slow pulse
-    float pulse = sin(uTime * 0.8) * 0.05 + 0.95;
-    vec3 coreColor = vec3(1.0, 1.0, 1.0) * pulse;
-    vec3 innerGlow = vec3(0.65, 0.54, 0.98) * fresnel * 0.6 * pulse;
-
-    gl_FragColor = vec4(coreColor + innerGlow, 1.0);
-  }
-`;
-
-// Enhanced core shader with golden/amber energy
-const enhancedCoreFragmentShader = `
-  uniform float uTime;
-  varying vec3 vNormal;
-  varying vec3 vPosition;
-
-  // Simplex noise function
-  vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
-  vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-
-  float snoise(vec3 v) {
-    const vec2 C = vec2(1.0/6.0, 1.0/3.0);
-    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
-    vec3 i = floor(v + dot(v, C.yyy));
-    vec3 x0 = v - i + dot(i, C.xxx);
-    vec3 g = step(x0.yzx, x0.xyz);
-    vec3 l = 1.0 - g;
-    vec3 i1 = min(g.xyz, l.zxy);
-    vec3 i2 = max(g.xyz, l.zxy);
-    vec3 x1 = x0 - i1 + C.xxx;
-    vec3 x2 = x0 - i2 + C.yyy;
-    vec3 x3 = x0 - D.yyy;
-    i = mod289(i);
-    vec4 p = permute(permute(permute(
-      i.z + vec4(0.0, i1.z, i2.z, 1.0))
-      + i.y + vec4(0.0, i1.y, i2.y, 1.0))
-      + i.x + vec4(0.0, i1.x, i2.x, 1.0));
-    float n_ = 0.142857142857;
-    vec3 ns = n_ * D.wyz - D.xzx;
-    vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-    vec4 x_ = floor(j * ns.z);
-    vec4 y_ = floor(j - 7.0 * x_);
-    vec4 x = x_ * ns.x + ns.yyyy;
-    vec4 y = y_ * ns.x + ns.yyyy;
-    vec4 h = 1.0 - abs(x) - abs(y);
-    vec4 b0 = vec4(x.xy, y.xy);
-    vec4 b1 = vec4(x.zw, y.zw);
-    vec4 s0 = floor(b0)*2.0 + 1.0;
-    vec4 s1 = floor(b1)*2.0 + 1.0;
-    vec4 sh = -step(h, vec4(0.0));
-    vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
-    vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
-    vec3 p0 = vec3(a0.xy, h.x);
-    vec3 p1 = vec3(a0.zw, h.y);
-    vec3 p2 = vec3(a1.xy, h.z);
-    vec3 p3 = vec3(a1.zw, h.w);
-    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
-    p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
-    vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-    m = m * m;
-    return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
-  }
-
-  void main() {
-    vec3 viewDir = normalize(-vPosition);
-    float fresnel = pow(1.0 - dot(vNormal, viewDir), 2.0);
-
-    // Animated noise for energy surface
-    float noise1 = snoise(vNormal * 3.0 + uTime * 0.3);
-    float noise2 = snoise(vNormal * 5.0 - uTime * 0.2);
-    float combinedNoise = (noise1 + noise2 * 0.5) / 1.5;
-
-    // Golden/amber core colors
-    vec3 coreInner = vec3(1.0, 0.9, 0.6);
-    vec3 coreOuter = vec3(1.0, 0.6, 0.2);
-    vec3 energyColor = vec3(0.9, 0.7, 0.3);
-
-    // Slow pulse
-    float pulse = sin(uTime * 0.6) * 0.08 + 0.92;
-
-    // Surface energy pattern
-    float energyPattern = smoothstep(-0.2, 0.6, combinedNoise);
-    vec3 surfaceColor = mix(coreOuter, coreInner, energyPattern) * pulse;
-
-    // Strong fresnel glow
-    vec3 glow = energyColor * fresnel * 0.8 * pulse;
-
-    // Bright center
-    float centerGlow = pow(1.0 - fresnel, 2.0);
-    surfaceColor += vec3(1.0, 0.95, 0.8) * centerGlow * 0.5;
-
-    gl_FragColor = vec4(surfaceColor + glow, 1.0);
-  }
-`;
-
 /* ─── 3D Components ─── */
 
 function OrbitRing({
@@ -494,16 +389,103 @@ function Core({ onHover }: { onHover: (hovered: boolean) => void }) {
   const ringRef = useRef<THREE.Group>(null);
   const particlesRef = useRef<THREE.Points>(null);
 
-  // Golden/amber energy material with noise
+  // Moon-like white/silver surface with subtle crater noise
   const material = useMemo(() => {
     return new THREE.ShaderMaterial({
       uniforms: { uTime: { value: 0 } },
       vertexShader: coreVertexShader,
-      fragmentShader: enhancedCoreFragmentShader,
+      fragmentShader: `
+        uniform float uTime;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+
+        // Simple noise
+        vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+        vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+
+        float snoise(vec3 v) {
+          const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+          const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+          vec3 i = floor(v + dot(v, C.yyy));
+          vec3 x0 = v - i + dot(i, C.xxx);
+          vec3 g = step(x0.yzx, x0.xyz);
+          vec3 l = 1.0 - g;
+          vec3 i1 = min(g.xyz, l.zxy);
+          vec3 i2 = max(g.xyz, l.zxy);
+          vec3 x1 = x0 - i1 + C.xxx;
+          vec3 x2 = x0 - i2 + C.yyy;
+          vec3 x3 = x0 - D.yyy;
+          i = mod289(i);
+          vec4 p = permute(permute(permute(
+            i.z + vec4(0.0, i1.z, i2.z, 1.0))
+            + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+            + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+          float n_ = 0.142857142857;
+          vec3 ns = n_ * D.wyz - D.xzx;
+          vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+          vec4 x_ = floor(j * ns.z);
+          vec4 y_ = floor(j - 7.0 * x_);
+          vec4 x = x_ * ns.x + ns.yyyy;
+          vec4 y = y_ * ns.x + ns.yyyy;
+          vec4 h = 1.0 - abs(x) - abs(y);
+          vec4 b0 = vec4(x.xy, y.xy);
+          vec4 b1 = vec4(x.zw, y.zw);
+          vec4 s0 = floor(b0)*2.0 + 1.0;
+          vec4 s1 = floor(b1)*2.0 + 1.0;
+          vec4 sh = -step(h, vec4(0.0));
+          vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
+          vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+          vec3 p0 = vec3(a0.xy, h.x);
+          vec3 p1 = vec3(a0.zw, h.y);
+          vec3 p2 = vec3(a1.xy, h.z);
+          vec3 p3 = vec3(a1.zw, h.w);
+          vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+          p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+          vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+          m = m * m;
+          return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+        }
+
+        void main() {
+          vec3 viewDir = normalize(-vPosition);
+          float fresnel = pow(1.0 - dot(vNormal, viewDir), 2.0);
+
+          // Moon surface noise - subtle craters
+          float noise1 = snoise(vNormal * 4.0);
+          float noise2 = snoise(vNormal * 8.0) * 0.5;
+          float noise3 = snoise(vNormal * 16.0) * 0.25;
+          float surfaceNoise = (noise1 + noise2 + noise3) / 1.75;
+
+          // Moon colors - white to light gray
+          vec3 brightSide = vec3(0.95, 0.95, 0.97);
+          vec3 darkSide = vec3(0.75, 0.75, 0.78);
+          vec3 craterColor = vec3(0.65, 0.65, 0.68);
+
+          // Surface variation
+          float craterMask = smoothstep(0.1, 0.4, surfaceNoise);
+          vec3 surfaceColor = mix(craterColor, brightSide, craterMask);
+          surfaceColor = mix(darkSide, surfaceColor, 0.7);
+
+          // Static lighting from top-left
+          vec3 lightDir = normalize(vec3(1.0, 0.8, 0.3));
+          float diff = max(dot(vNormal, lightDir), 0.0);
+          float lit = smoothstep(-0.1, 0.4, diff);
+
+          // Apply lighting
+          surfaceColor = mix(surfaceColor * 0.3, surfaceColor, lit);
+
+          // Subtle silver glow on edge
+          vec3 glow = vec3(0.85, 0.88, 0.95) * fresnel * 0.15;
+
+          gl_FragColor = vec4(surfaceColor + glow, 1.0);
+        }
+      `,
     });
   }, []);
 
-  // Inner glow - golden
+  // Soft white/silver glow
   const glowMat = useMemo(() => {
     return new THREE.ShaderMaterial({
       uniforms: { uTime: { value: 0 } },
@@ -514,8 +496,8 @@ function Core({ onHover }: { onHover: (hovered: boolean) => void }) {
         void main() {
           vec3 viewDir = normalize(-vPosition);
           float fresnel = pow(1.0 - dot(vNormal, viewDir), 2.0);
-          vec3 color = vec3(1.0, 0.75, 0.3) * fresnel * 0.5;
-          gl_FragColor = vec4(color, fresnel * 0.35);
+          vec3 color = vec3(0.9, 0.92, 0.98) * fresnel * 0.3;
+          gl_FragColor = vec4(color, fresnel * 0.2);
         }
       `,
       transparent: true,
@@ -525,7 +507,7 @@ function Core({ onHover }: { onHover: (hovered: boolean) => void }) {
     });
   }, []);
 
-  // Outer glow - warm amber
+  // Outer soft halo
   const outerGlowMat = useMemo(() => {
     return new THREE.ShaderMaterial({
       uniforms: { uTime: { value: 0 } },
@@ -536,8 +518,8 @@ function Core({ onHover }: { onHover: (hovered: boolean) => void }) {
         void main() {
           vec3 viewDir = normalize(-vPosition);
           float fresnel = pow(1.0 - dot(vNormal, viewDir), 2.0);
-          vec3 color = vec3(1.0, 0.6, 0.15) * fresnel * 0.25;
-          gl_FragColor = vec4(color, fresnel * 0.15);
+          vec3 color = vec3(0.85, 0.88, 0.95) * fresnel * 0.15;
+          gl_FragColor = vec4(color, fresnel * 0.08);
         }
       `,
       transparent: true,
@@ -547,14 +529,14 @@ function Core({ onHover }: { onHover: (hovered: boolean) => void }) {
     });
   }, []);
 
-  // Energy particles around core
+  // Soft particles around moon
   const particleGeometry = useMemo(() => {
-    const count = 200;
+    const count = 120;
     const positions = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const radius = 1.2 + Math.random() * 0.8;
-      const height = (Math.random() - 0.5) * 0.3;
+      const radius = 1.3 + Math.random() * 0.6;
+      const height = (Math.random() - 0.5) * 0.2;
       positions[i * 3] = Math.cos(angle) * radius;
       positions[i * 3 + 1] = height;
       positions[i * 3 + 2] = Math.sin(angle) * radius;
@@ -570,24 +552,24 @@ function Core({ onHover }: { onHover: (hovered: boolean) => void }) {
     if (meshRef.current) {
       (meshRef.current.material as THREE.ShaderMaterial).uniforms.uTime.value =
         time;
-      meshRef.current.rotation.y = time * 0.02;
+      meshRef.current.rotation.y = time * 0.01;
     }
     if (glowRef.current) {
-      const pulse = Math.sin(time * 0.6) * 0.1 + 1.3;
+      const pulse = Math.sin(time * 0.5) * 0.05 + 1.15;
       glowRef.current.scale.setScalar(pulse);
     }
     if (outerGlowRef.current) {
-      const pulse = Math.sin(time * 0.4) * 0.12 + 2.2;
+      const pulse = Math.sin(time * 0.3) * 0.08 + 1.8;
       outerGlowRef.current.scale.setScalar(pulse);
     }
-    // Rotating energy ring
+    // Slow rotating ring
     if (ringRef.current) {
-      ringRef.current.rotation.z = time * 0.1;
-      ringRef.current.rotation.x = Math.sin(time * 0.15) * 0.2;
+      ringRef.current.rotation.z = time * 0.03;
+      ringRef.current.rotation.x = Math.sin(time * 0.1) * 0.1;
     }
-    // Orbiting particles
+    // Slow orbiting particles
     if (particlesRef.current) {
-      particlesRef.current.rotation.y = time * 0.08;
+      particlesRef.current.rotation.y = time * 0.02;
     }
   });
 
@@ -597,52 +579,42 @@ function Core({ onHover }: { onHover: (hovered: boolean) => void }) {
       onPointerEnter={() => onHover(true)}
       onPointerLeave={() => onHover(false)}
     >
-      {/* Main core sphere - larger */}
+      {/* Main moon sphere */}
       <mesh ref={meshRef} material={material}>
-        <sphereGeometry args={[0.9, 64, 64]} />
+        <sphereGeometry args={[0.85, 64, 64]} />
       </mesh>
 
-      {/* Inner glow */}
+      {/* Soft inner glow */}
       <mesh ref={glowRef} material={glowMat}>
-        <sphereGeometry args={[1.15, 32, 32]} />
+        <sphereGeometry args={[1.05, 32, 32]} />
       </mesh>
 
-      {/* Outer glow */}
+      {/* Outer soft halo */}
       <mesh ref={outerGlowRef} material={outerGlowMat}>
-        <sphereGeometry args={[1.5, 32, 32]} />
+        <sphereGeometry args={[1.35, 32, 32]} />
       </mesh>
 
-      {/* Rotating energy ring */}
+      {/* Subtle silver ring */}
       <group ref={ringRef}>
         <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[1.6, 1.65, 128]} />
+          <ringGeometry args={[1.45, 1.48, 128]} />
           <meshBasicMaterial
-            color={0xffb347}
+            color={0xc0c8d8}
             transparent
-            opacity={0.25}
-            side={THREE.DoubleSide}
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
-        <mesh rotation={[Math.PI / 2, 0, Math.PI / 6]}>
-          <ringGeometry args={[1.75, 1.78, 128]} />
-          <meshBasicMaterial
-            color={0xffd700}
-            transparent
-            opacity={0.15}
+            opacity={0.12}
             side={THREE.DoubleSide}
             blending={THREE.AdditiveBlending}
           />
         </mesh>
       </group>
 
-      {/* Orbiting energy particles */}
+      {/* Soft orbiting particles */}
       <points ref={particlesRef} geometry={particleGeometry}>
         <pointsMaterial
-          color={0xffd700}
-          size={0.04}
+          color={0xd0d8e8}
+          size={0.03}
           transparent
-          opacity={0.6}
+          opacity={0.4}
           blending={THREE.AdditiveBlending}
           depthWrite={false}
         />
@@ -667,13 +639,13 @@ function Scene({
   const { camera } = useThree();
 
   useEffect(() => {
-    // Front-facing view - much more comfortable
-    camera.position.set(0, 4, 14);
+    // Tilted view to see multiple orbits - slightly tilted inward
+    camera.position.set(0, 6, 16);
     camera.lookAt(0, 0, 0);
   }, [camera]);
 
   return (
-    <group rotation={[-Math.PI / 12, 0, 0]}>
+    <group rotation={[-Math.PI / 6, 0, 0]}>
       {/* Core - AlkaidSTART */}
       <Core onHover={onCoreHover} />
 
@@ -750,9 +722,9 @@ function PlanetLabel({
       const z = Math.sin(planetAngle) * config.ry;
       const depth = Math.sin(planetAngle);
 
-      // Front-facing projection
-      const distance = 14;
-      const tilt = -Math.PI / 12;
+      // Tilted projection
+      const distance = 16;
+      const tilt = -Math.PI / 6;
       const projectedY = (x * Math.sin(tilt)) / (distance - z * Math.cos(tilt));
       const projectedX = (x * Math.cos(tilt)) / (distance - z * Math.cos(tilt));
 
@@ -796,48 +768,48 @@ function CoreInfoPanel({ visible }: { visible: boolean }) {
         visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
       }`}
     >
-      <div className="bg-black/70 backdrop-blur-xl border border-amber-500/30 rounded-xl px-6 py-4 shadow-2xl shadow-amber-500/10 min-w-[320px] text-center">
+      <div className="bg-black/70 backdrop-blur-xl border border-slate-400/30 rounded-xl px-6 py-4 shadow-2xl shadow-slate-500/10 min-w-[320px] text-center">
         {/* Title */}
         <div className="flex items-center justify-center gap-2 mb-2">
-          <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-          <h3 className="font-[Orbitron] text-lg font-bold text-amber-300 tracking-wider">
+          <div className="w-2 h-2 rounded-full bg-slate-300 animate-pulse" />
+          <h3 className="font-[Orbitron] text-lg font-bold text-slate-200 tracking-wider">
             AlkaidSTART
           </h3>
-          <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-slate-300 animate-pulse" />
         </div>
 
         {/* Divider */}
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent mb-3" />
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-slate-400/40 to-transparent mb-3" />
 
         {/* Description */}
-        <p className="text-[0.8rem] text-amber-100/80 leading-relaxed mb-3">
+        <p className="text-[0.8rem] text-slate-300/80 leading-relaxed mb-3">
           Agent 项目生态系统的核心枢纽
         </p>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="bg-amber-500/10 rounded-lg py-2 px-1">
-            <div className="font-[Orbitron] text-xs text-amber-400 font-bold">
+          <div className="bg-slate-500/10 rounded-lg py-2 px-1">
+            <div className="font-[Orbitron] text-xs text-slate-300 font-bold">
               4
             </div>
-            <div className="text-[0.6rem] text-amber-200/50 mt-0.5">AGENTS</div>
+            <div className="text-[0.6rem] text-slate-400/50 mt-0.5">AGENTS</div>
           </div>
-          <div className="bg-amber-500/10 rounded-lg py-2 px-1">
-            <div className="font-[Orbitron] text-xs text-amber-400 font-bold">
+          <div className="bg-slate-500/10 rounded-lg py-2 px-1">
+            <div className="font-[Orbitron] text-xs text-slate-300 font-bold">
               99.9%
             </div>
-            <div className="text-[0.6rem] text-amber-200/50 mt-0.5">UPTIME</div>
+            <div className="text-[0.6rem] text-slate-400/50 mt-0.5">UPTIME</div>
           </div>
-          <div className="bg-amber-500/10 rounded-lg py-2 px-1">
-            <div className="font-[Orbitron] text-xs text-amber-400 font-bold">
+          <div className="bg-slate-500/10 rounded-lg py-2 px-1">
+            <div className="font-[Orbitron] text-xs text-slate-300 font-bold">
               24/7
             </div>
-            <div className="text-[0.6rem] text-amber-200/50 mt-0.5">ONLINE</div>
+            <div className="text-[0.6rem] text-slate-400/50 mt-0.5">ONLINE</div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="mt-3 text-[0.65rem] text-amber-200/40 font-[Orbitron] tracking-widest">
+        <div className="mt-3 text-[0.65rem] text-slate-400/40 font-[Orbitron] tracking-widest">
           CORE SYSTEM // ACTIVE
         </div>
       </div>
