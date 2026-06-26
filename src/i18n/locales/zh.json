@@ -1,0 +1,134 @@
+{
+  "header": {
+    "title": "宇宙智能体画布",
+    "sysTime": "系统时间"
+  },
+  "core": {
+    "name": "AlkaidSTART",
+    "description": "Agent 项目生态系统的核心枢纽",
+    "status": "核心系统 // 运行中",
+    "stats": {
+      "agents": "智能体",
+      "uptime": "运行时间",
+      "online": "在线状态"
+    }
+  },
+  "planets": {
+    "voiceCanvas": {
+      "name": "VoiceCanvas",
+      "role": "多模态流",
+      "desc": "实时双工会话音频系统。",
+      "stats": {
+        "latency": "延迟",
+        "codec": "编解码器",
+        "mosScore": "MOS评分"
+      }
+    },
+    "autonomousAgent": {
+      "name": "自主智能体",
+      "role": "工具调用专家",
+      "desc": "自主循环执行沙盒命令。",
+      "stats": {
+        "successRate": "成功率",
+        "stepsPerTask": "步骤/任务",
+        "runs": "运行次数"
+      }
+    },
+    "multiAgent": {
+      "name": "多智能体系统",
+      "role": "协作生态系统",
+      "desc": "分布式队列代理协调团队共识。",
+      "stats": {
+        "agentNodes": "智能体节点",
+        "consensus": "共识率",
+        "iterations": "迭代次数"
+      }
+    },
+    "agenticRag": {
+      "name": "智能RAG与记忆",
+      "role": "知识中心",
+      "desc": "余弦向量检索与情景图记忆。",
+      "stats": {
+        "vectors": "向量数",
+        "searchLatency": "搜索延迟",
+        "cacheHit": "缓存命中"
+      }
+    }
+  },
+  "console": {
+    "speed": "速度",
+    "gpu": "GPU",
+    "ping": "延迟",
+    "logs": {
+      "sysOrchestrator": "系统: 核心编排器运行在 us-west-2 集群。轨道运行正常。",
+      "voiceCanvasCalibrate": "VOICE_CANVAS: 正在校准静音阈值 (VAD) // 噪声基准 -52dB。",
+      "autonomousAgentSearch": "AUTONOMOUS_AGENT: 搜索工具返回12条结果。正在合成解决方案...",
+      "multiAgentCritic": "MULTI_AGENT: 评审智能体拒绝了草案 v1.2，请求作者修订。",
+      "ragMemoryExec": "RAG_MEMORY: 在120万节点上执行余弦相似度计算。检索时间 14ms。",
+      "sysHealthCheck": "系统: 健康检查完成。内存使用: 14%，CPU: 8.5%。",
+      "voiceCanvasStreaming": "VOICE_CANVAS: 正在流式传输 Opus 数据包 (48kHz 立体声, 120ms 延迟)。",
+      "autonomousAgentCode": "AUTONOMOUS_AGENT: 代码执行器启动完成。沙箱已初始化。",
+      "multiAgentConsensus": "MULTI_AGENT: 达成共识。正在为用户聚合输出草稿。",
+      "ragMemoryReindex": "RAG_MEMORY: 正在重建长期语义存储索引。向量嵌入已更新。",
+      "interaction": "交互: 已连接到 {{name}}。遥测数据流传输中..."
+    }
+  },
+  "projectDetails": {
+    "voiceCanvas": {
+      "title": "VoiceCanvas",
+      "badge": "多模态实时交互",
+      "subtitle": "实时双工语音交互引擎，具备低延迟和富有表现力的语音合成能力。",
+      "description": "VoiceCanvas 将语音活动检测 (VAD)、自动语音识别 (ASR)、大语言模型编排和文本转语音 (TTS) 合成整合到统一的高性能流式处理管线中。旨在支持自然的对话智能体，模拟人类的轮流发言和情感反应。",
+      "metrics": {
+        "latency": "延迟",
+        "audioQuality": "音频质量",
+        "mosScore": "MOS评分",
+        "gpuConcurrency": "GPU并发数"
+      },
+      "listenPrompt": "VoiceCanvas: 在线。",
+      "systemPrompt": "系统: 点击麦克风按钮开始与语音AI对话。"
+    },
+    "autonomousAgent": {
+      "title": "自主任务智能体",
+      "badge": "ReAct 工具调用专家",
+      "subtitle": "一个能够推理、规划并编写代码来完成多步骤目标的自主智能体。",
+      "description": "自主任务智能体利用先进的 ReAct（推理与行动）提示拓扑结构，进行自我修正并执行复杂的代码、终端命令、网络搜索查询和邮件发送。配备安全沙箱以防止数据丢失，同时提供强大的执行能力。",
+      "metrics": {
+        "taskSuccessRate": "任务成功率",
+        "avgSteps": "平均步骤/任务",
+        "tokensSaved": "节省Token数",
+        "sandboxedRuns": "沙箱运行次数"
+      },
+      "terminalPrompt": "自主任务智能体终端 v1.0.0",
+      "helpPrompt": "输入 \"help\" 查看指令列表，或点击下方的快速任务。"
+    },
+    "multiAgent": {
+      "title": "多智能体系统",
+      "badge": "协作生态系统",
+      "subtitle": "一个分布式系统，由专业智能体协商和审阅工作，以实现高质量的结果。",
+      "description": "多智能体系统不依赖单个通用模型，而是将任务分解并分配给专业智能体：研究员、撰写者和审阅者。它们通过异步消息传递队列进行协作，在最终输出生成之前自动辩论草稿并修正错误。",
+      "metrics": {
+        "agentCount": "智能体数量",
+        "consensusRate": "共识率",
+        "avgIterations": "平均迭代次数",
+        "topicDiversity": "主题多样性"
+      },
+      "systemIdle": "多智能体代理空闲中。等待协作触发。"
+    },
+    "agenticRag": {
+      "title": "智能RAG与记忆中心",
+      "badge": "知识存储器",
+      "subtitle": "高召回率语义搜索数据库，结合情景智能体记忆层。",
+      "description": "该模块作为AI系统的长期记忆。它实现了混合关键词/向量搜索 (RAG)，使用余弦相似度在高维文本嵌入上进行检索，同时维护一个持久化图数据库来建模语义关系，确保智能体记住之前的用户交互和领域文件。",
+      "metrics": {
+        "vectorNodes": "向量节点数",
+        "queryLatency": "查询延迟",
+        "recallRate": "召回率",
+        "memoryHitRate": "记忆命中率"
+      }
+    }
+  },
+  "language": {
+    "switch": "English"
+  }
+}

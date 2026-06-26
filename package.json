@@ -14,9 +14,11 @@
     "@react-three/fiber": "^9.6.1",
     "@types/three": "^0.185.0",
     "gsap": "^3.15.0",
+    "i18next": "^26.3.3",
     "lucide-react": "^1.21.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-i18next": "^17.0.8",
     "three": "^0.185.0"
   },
   "devDependencies": {

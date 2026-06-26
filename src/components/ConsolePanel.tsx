@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Terminal, Cpu, Clock, Sliders } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface ConsolePanelProps {
   speed: number;
@@ -7,17 +8,17 @@ interface ConsolePanelProps {
   activePlanetName: string | null;
 }
 
-const SIMULATED_LOGS = [
-  "SYSTEM: Core Orchestrator running on cluster us-west-2. Orbiting normal.",
-  "VOICE_CANVAS: Calibrating silence threshold (VAD) // Noise floor -52dB.",
-  "AUTONOMOUS_AGENT: Search tool returned 12 hits. Synthesizing solution...",
-  "MULTI_AGENT: Critic agent rejected Draft v1.2, requesting Writer revision.",
-  "RAG_MEMORY: Executing cosine similarity on 1.2M nodes. Retrieval time 14ms.",
-  "SYSTEM: Health check complete. Memory consumption: 14%, CPU: 8.5%.",
-  "VOICE_CANVAS: Streaming Opus packets (48kHz stereo, 120ms latency).",
-  "AUTONOMOUS_AGENT: Code executor spinup complete. Sandbox initialized.",
-  "MULTI_AGENT: Consensus reached. Aggregating output draft for User.",
-  "RAG_MEMORY: Re-indexing long-term semantic storage. Vector embeddings updated.",
+const LOG_KEYS = [
+  "console.logs.sysOrchestrator",
+  "console.logs.voiceCanvasCalibrate",
+  "console.logs.autonomousAgentSearch",
+  "console.logs.multiAgentCritic",
+  "console.logs.ragMemoryExec",
+  "console.logs.sysHealthCheck",
+  "console.logs.voiceCanvasStreaming",
+  "console.logs.autonomousAgentCode",
+  "console.logs.multiAgentConsensus",
+  "console.logs.ragMemoryReindex",
 ];
 
 export default function ConsolePanel({
@@ -25,9 +26,11 @@ export default function ConsolePanel({
   setSpeed,
   activePlanetName,
 }: ConsolePanelProps) {
-  const [logMessage, setLogMessage] = useState(SIMULATED_LOGS[0]);
+  const { t } = useTranslation();
+  const [logMessage, setLogMessage] = useState("");
   const [timeString, setTimeString] = useState("");
   const logIndexRef = useRef(0);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -44,20 +47,25 @@ export default function ConsolePanel({
   }, []);
 
   useEffect(() => {
+    if (!initializedRef.current) {
+      setLogMessage(t(LOG_KEYS[0]));
+      initializedRef.current = true;
+    }
+  }, [t]);
+
+  useEffect(() => {
     if (activePlanetName) {
-      setLogMessage(
-        `INTERACTION: Connected to ${activePlanetName}. Telemetry streaming...`,
-      );
+      setLogMessage(t("console.logs.interaction", { name: activePlanetName }));
       return;
     }
 
     const interval = setInterval(() => {
-      logIndexRef.current = (logIndexRef.current + 1) % SIMULATED_LOGS.length;
-      setLogMessage(SIMULATED_LOGS[logIndexRef.current]);
+      logIndexRef.current = (logIndexRef.current + 1) % LOG_KEYS.length;
+      setLogMessage(t(LOG_KEYS[logIndexRef.current]));
     }, 4500);
 
     return () => clearInterval(interval);
-  }, [activePlanetName]);
+  }, [activePlanetName, t]);
 
   return (
     <div className="absolute bottom-0 left-0 w-full z-20 px-6 pb-4 pointer-events-none">
@@ -79,7 +87,7 @@ export default function ConsolePanel({
               htmlFor="orbit-speed"
               className="text-[0.65rem] uppercase tracking-[0.05em] text-[#9ca3af]"
             >
-              Speed
+              {t("console.speed")}
             </label>
             <input
               id="orbit-speed"
@@ -102,14 +110,14 @@ export default function ConsolePanel({
           <div className="flex items-center gap-1.5 text-[0.65rem]">
             <Cpu size={12} className="text-[#10b981]" />
             <span>
-              GPU: <strong className="text-white">14%</strong>
+              {t("console.gpu")}: <strong className="text-white">14%</strong>
             </span>
           </div>
 
           <div className="flex items-center gap-1.5 text-[0.65rem]">
             <Clock size={12} className="text-[#3b82f6]" />
             <span>
-              PING: <strong className="text-white">12ms</strong>
+              {t("console.ping")}: <strong className="text-white">12ms</strong>
             </span>
           </div>
         </div>

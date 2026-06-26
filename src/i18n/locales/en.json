@@ -1,0 +1,134 @@
+{
+  "header": {
+    "title": "COSMIC AGENTIC CANVAS",
+    "sysTime": "SYS_TIME"
+  },
+  "core": {
+    "name": "AlkaidSTART",
+    "description": "Core Hub of Agent Project Ecosystem",
+    "status": "CORE SYSTEM // ACTIVE",
+    "stats": {
+      "agents": "AGENTS",
+      "uptime": "UPTIME",
+      "online": "ONLINE"
+    }
+  },
+  "planets": {
+    "voiceCanvas": {
+      "name": "VoiceCanvas",
+      "role": "Multimodal Stream",
+      "desc": "Real-time duplex conversational audio system.",
+      "stats": {
+        "latency": "LATENCY",
+        "codec": "CODEC",
+        "mosScore": "MOS SCORE"
+      }
+    },
+    "autonomousAgent": {
+      "name": "Autonomous Agent",
+      "role": "Tool Use Specialist",
+      "desc": "Autonomous loops executing sandboxed commands.",
+      "stats": {
+        "successRate": "SUCCESS RATE",
+        "stepsPerTask": "STEPS / TASK",
+        "runs": "RUNS"
+      }
+    },
+    "multiAgent": {
+      "name": "Multi-Agent System",
+      "role": "Collaborative Ecosystem",
+      "desc": "Distributed queue broker orchestrating team consensus.",
+      "stats": {
+        "agentNodes": "AGENT NODES",
+        "consensus": "CONSENSUS",
+        "iterations": "ITERATIONS"
+      }
+    },
+    "agenticRag": {
+      "name": "Agentic RAG & Memory",
+      "role": "Knowledge Hub",
+      "desc": "Cosine vector retrieval & episodic graph memories.",
+      "stats": {
+        "vectors": "VECTORS",
+        "searchLatency": "SEARCH LATENCY",
+        "cacheHit": "CACHE HIT"
+      }
+    }
+  },
+  "console": {
+    "speed": "Speed",
+    "gpu": "GPU",
+    "ping": "PING",
+    "logs": {
+      "sysOrchestrator": "SYSTEM: Core Orchestrator running on cluster us-west-2. Orbiting normal.",
+      "voiceCanvasCalibrate": "VOICE_CANVAS: Calibrating silence threshold (VAD) // Noise floor -52dB.",
+      "autonomousAgentSearch": "AUTONOMOUS_AGENT: Search tool returned 12 hits. Synthesizing solution...",
+      "multiAgentCritic": "MULTI_AGENT: Critic agent rejected Draft v1.2, requesting Writer revision.",
+      "ragMemoryExec": "RAG_MEMORY: Executing cosine similarity on 1.2M nodes. Retrieval time 14ms.",
+      "sysHealthCheck": "SYSTEM: Health check complete. Memory consumption: 14%, CPU: 8.5%.",
+      "voiceCanvasStreaming": "VOICE_CANVAS: Streaming Opus packets (48kHz stereo, 120ms latency).",
+      "autonomousAgentCode": "AUTONOMOUS_AGENT: Code executor spinup complete. Sandbox initialized.",
+      "multiAgentConsensus": "MULTI_AGENT: Consensus reached. Aggregating output draft for User.",
+      "ragMemoryReindex": "RAG_MEMORY: Re-indexing long-term semantic storage. Vector embeddings updated.",
+      "interaction": "INTERACTION: Connected to {{name}}. Telemetry streaming..."
+    }
+  },
+  "projectDetails": {
+    "voiceCanvas": {
+      "title": "VoiceCanvas",
+      "badge": "Multimodal Real-Time Interaction",
+      "subtitle": "Real-time duplex voice interaction engine featuring low latency and expressive synthesis.",
+      "description": "VoiceCanvas integrates Voice Activity Detection (VAD), Automatic Speech Recognition (ASR), Large Language Model orchestration, and Text-to-Speech (TTS) synthesis into a unified, high-performance streaming pipeline. Built to support conversational agents that feel natural, mimicking human turn-taking and emotional response inflections.",
+      "metrics": {
+        "latency": "Latency",
+        "audioQuality": "Audio Quality",
+        "mosScore": "MOS Score",
+        "gpuConcurrency": "GPU Concurrency"
+      },
+      "listenPrompt": "VoiceCanvas: Online.",
+      "systemPrompt": "System: Click the microphone to start speaking with the Voice AI."
+    },
+    "autonomousAgent": {
+      "title": "Autonomous Task Agent",
+      "badge": "ReAct Tool Use Specialist",
+      "subtitle": "An autonomous agent that reasons, plans, and writes code to accomplish multi-step objectives.",
+      "description": "Autonomous Task Agent utilizes advanced ReAct (Reasoning and Acting) prompt topologies to self-correct and execute complex code, terminal commands, web search queries, and email dispatches. Outfitted with safety sandboxes to prevent data loss while offering powerful execution capability.",
+      "metrics": {
+        "taskSuccessRate": "Task Success Rate",
+        "avgSteps": "Avg Steps / Task",
+        "tokensSaved": "Tokens Saved",
+        "sandboxedRuns": "Sandboxed Runs"
+      },
+      "terminalPrompt": "Autonomous Task Agent Terminal v1.0.0",
+      "helpPrompt": "Type \"help\" to list instructions, or click quick tasks below."
+    },
+    "multiAgent": {
+      "title": "Multi-Agent System",
+      "badge": "Collaborative Ecosystem",
+      "subtitle": "A distributed system where specialized agents negotiate and review work to achieve high-quality results.",
+      "description": "Instead of relying on a single generalist model, the Multi-Agent System breaks tasks down and assigns them to specialized agents: Researcher, Writer, and Critic. They collaborate via an asynchronous message-passing queue, debating drafts and correcting errors automatically before final output generation.",
+      "metrics": {
+        "agentCount": "Agent Count",
+        "consensusRate": "Consensus Rate",
+        "avgIterations": "Avg Iterations",
+        "topicDiversity": "Topic Diversity"
+      },
+      "systemIdle": "Multi-Agent Broker Idle. Awaiting collaboration trigger."
+    },
+    "agenticRag": {
+      "title": "Agentic RAG & Memory Hub",
+      "badge": "Knowledge Retainer",
+      "subtitle": "High recall semantic search database coupled with episodic agent memory layers.",
+      "description": "This module acts as the long-term memory for our AI system. It implements hybrid keyword/vector search (RAG) using cosine similarity on high-dimensional text embeddings, alongside a persistent graph database that models semantic relationships, ensuring agents remember previous user interactions and domain files.",
+      "metrics": {
+        "vectorNodes": "Vector Nodes",
+        "queryLatency": "Query Latency",
+        "recallRate": "Recall Rate",
+        "memoryHitRate": "Memory Hit Rate"
+      }
+    }
+  },
+  "language": {
+    "switch": "中文"
+  }
+}
