@@ -639,13 +639,13 @@ function Scene({
   const { camera } = useThree();
 
   useEffect(() => {
-    // Tilted view to see multiple orbits - slightly tilted inward
-    camera.position.set(0, 6, 16);
+    // Front-facing view - much more comfortable
+    camera.position.set(0, 4, 14);
     camera.lookAt(0, 0, 0);
   }, [camera]);
 
   return (
-    <group rotation={[-Math.PI / 6, 0, 0]}>
+    <group rotation={[-Math.PI / 12, 0, 0]}>
       {/* Core - AlkaidSTART */}
       <Core onHover={onCoreHover} />
 
@@ -722,9 +722,9 @@ function PlanetLabel({
       const z = Math.sin(planetAngle) * config.ry;
       const depth = Math.sin(planetAngle);
 
-      // Tilted projection
-      const distance = 16;
-      const tilt = -Math.PI / 6;
+      // Front-facing projection
+      const distance = 14;
+      const tilt = -Math.PI / 12;
       const projectedY = (x * Math.sin(tilt)) / (distance - z * Math.cos(tilt));
       const projectedX = (x * Math.cos(tilt)) / (distance - z * Math.cos(tilt));
 
@@ -779,7 +779,7 @@ function CoreInfoPanel({ visible }: { visible: boolean }) {
         </div>
 
         {/* Divider */}
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-slate-400/40 to-transparent mb-3" />
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-slate-500/40 to-transparent mb-3" />
 
         {/* Description */}
         <p className="text-[0.8rem] text-slate-300/80 leading-relaxed mb-3">
@@ -809,7 +809,7 @@ function CoreInfoPanel({ visible }: { visible: boolean }) {
         </div>
 
         {/* Footer */}
-        <div className="mt-3 text-[0.65rem] text-slate-400/40 font-[Orbitron] tracking-widest">
+        <div className="mt-3 text-[0.65rem] text-slate-300/40 font-[Orbitron] tracking-widest">
           CORE SYSTEM // ACTIVE
         </div>
       </div>
