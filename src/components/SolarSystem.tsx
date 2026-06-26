@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Search, Code2, Mail, Terminal } from "lucide-react";
+import { useRef, useMemo, useState, useEffect } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import * as THREE from "three";
 
 interface SolarSystemProps {
   speed: number;
@@ -12,10 +13,12 @@ interface PlanetConfig {
   role: string;
   desc: string;
   color: string;
+  hexColor: string;
   rx: number;
   ry: number;
   speedCoeff: number;
   startAngle: number;
+  size: number;
   stats: { label: string; value: string }[];
 }
 
@@ -26,10 +29,12 @@ const PLANETS_CONFIG: PlanetConfig[] = [
     role: "Multimodal Stream",
     desc: "Real-time duplex conversational audio system.",
     color: "var(--c-planet-1)",
-    rx: 200,
-    ry: 80,
+    hexColor: "#06b6d4",
+    rx: 3.2,
+    ry: 1.0,
     speedCoeff: 1.0,
     startAngle: 0,
+    size: 0.35,
     stats: [
       { label: "LATENCY", value: "120ms" },
       { label: "CODEC", value: "Opus 48kbps" },
@@ -42,10 +47,12 @@ const PLANETS_CONFIG: PlanetConfig[] = [
     role: "Tool Use Specialist",
     desc: "Autonomous loops executing sandboxed commands.",
     color: "var(--c-planet-2)",
-    rx: 290,
-    ry: 116,
+    hexColor: "#10b981",
+    rx: 4.8,
+    ry: 1.5,
     speedCoeff: 0.7,
     startAngle: Math.PI / 2,
+    size: 0.4,
     stats: [
       { label: "SUCCESS RATE", value: "94.2%" },
       { label: "STEPS / TASK", value: "12 steps" },
@@ -58,10 +65,12 @@ const PLANETS_CONFIG: PlanetConfig[] = [
     role: "Collaborative Ecosystem",
     desc: "Distributed queue broker orchestrating team consensus.",
     color: "var(--c-planet-3)",
-    rx: 380,
-    ry: 152,
+    hexColor: "#ec4899",
+    rx: 6.2,
+    ry: 2.0,
     speedCoeff: 0.45,
     startAngle: Math.PI,
+    size: 0.45,
     stats: [
       { label: "AGENT NODES", value: "3 Active" },
       { label: "CONSENSUS", value: "98.5%" },
@@ -74,10 +83,12 @@ const PLANETS_CONFIG: PlanetConfig[] = [
     role: "Knowledge Hub",
     desc: "Cosine vector retrieval & episodic graph memories.",
     color: "var(--c-planet-4)",
-    rx: 460,
-    ry: 184,
+    hexColor: "#3b82f6",
+    rx: 7.5,
+    ry: 2.4,
     speedCoeff: 0.3,
     startAngle: (3 * Math.PI) / 2,
+    size: 0.5,
     stats: [
       { label: "VECTORS", value: "1.2M docs" },
       { label: "SEARCH LATENCY", value: "14ms" },
@@ -86,253 +97,798 @@ const PLANETS_CONFIG: PlanetConfig[] = [
   },
 ];
 
+/* ─── Shaders ─── */
+
+const planetVertexShader = `
+  varying vec3 vNormal;
+  varying vec3 vPosition;
+  void main() {
+    vNormal = normalize(normalMatrix * normal);
+    vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+function getPlanetFragmentShader(baseColor: string, glowColor: string) {
+  return `
+    varying vec3 vNormal;
+    varying vec3 vPosition;
+
+    void main() {
+      vec3 viewDir = normalize(-vPosition);
+      float fresnel = pow(1.0 - dot(vNormal, viewDir), 2.0);
+
+      vec3 base = vec3(${baseColor});
+      vec3 glow = vec3(${glowColor});
+
+      // Static lighting from top-left
+      vec3 lightDir = normalize(vec3(1.0, 0.8, 0.3));
+      float diff = max(dot(vNormal, lightDir), 0.0);
+
+      // Subtle atmosphere glow
+      vec3 atmosphere = glow * fresnel * 0.4;
+
+      // Dark side
+      float lit = smoothstep(-0.1, 0.4, diff);
+      vec3 color = mix(base * 0.2, base * 0.85 + glow * 0.2, lit) + atmosphere;
+
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `;
+}
+
+const coreVertexShader = `
+  varying vec3 vNormal;
+  varying vec3 vPosition;
+  void main() {
+    vNormal = normalize(normalMatrix * normal);
+    vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const coreFragmentShader = `
+  uniform float uTime;
+  varying vec3 vNormal;
+  varying vec3 vPosition;
+
+  void main() {
+    vec3 viewDir = normalize(-vPosition);
+    float fresnel = pow(1.0 - dot(vNormal, viewDir), 3.0);
+
+    // Very slow pulse
+    float pulse = sin(uTime * 0.8) * 0.05 + 0.95;
+    vec3 coreColor = vec3(1.0, 1.0, 1.0) * pulse;
+    vec3 innerGlow = vec3(0.65, 0.54, 0.98) * fresnel * 0.6 * pulse;
+
+    gl_FragColor = vec4(coreColor + innerGlow, 1.0);
+  }
+`;
+
+// Enhanced core shader with golden/amber energy
+const enhancedCoreFragmentShader = `
+  uniform float uTime;
+  varying vec3 vNormal;
+  varying vec3 vPosition;
+
+  // Simplex noise function
+  vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+  vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+  vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+  vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+
+  float snoise(vec3 v) {
+    const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+    vec3 i = floor(v + dot(v, C.yyy));
+    vec3 x0 = v - i + dot(i, C.xxx);
+    vec3 g = step(x0.yzx, x0.xyz);
+    vec3 l = 1.0 - g;
+    vec3 i1 = min(g.xyz, l.zxy);
+    vec3 i2 = max(g.xyz, l.zxy);
+    vec3 x1 = x0 - i1 + C.xxx;
+    vec3 x2 = x0 - i2 + C.yyy;
+    vec3 x3 = x0 - D.yyy;
+    i = mod289(i);
+    vec4 p = permute(permute(permute(
+      i.z + vec4(0.0, i1.z, i2.z, 1.0))
+      + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+      + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+    float n_ = 0.142857142857;
+    vec3 ns = n_ * D.wyz - D.xzx;
+    vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+    vec4 x_ = floor(j * ns.z);
+    vec4 y_ = floor(j - 7.0 * x_);
+    vec4 x = x_ * ns.x + ns.yyyy;
+    vec4 y = y_ * ns.x + ns.yyyy;
+    vec4 h = 1.0 - abs(x) - abs(y);
+    vec4 b0 = vec4(x.xy, y.xy);
+    vec4 b1 = vec4(x.zw, y.zw);
+    vec4 s0 = floor(b0)*2.0 + 1.0;
+    vec4 s1 = floor(b1)*2.0 + 1.0;
+    vec4 sh = -step(h, vec4(0.0));
+    vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
+    vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+    vec3 p0 = vec3(a0.xy, h.x);
+    vec3 p1 = vec3(a0.zw, h.y);
+    vec3 p2 = vec3(a1.xy, h.z);
+    vec3 p3 = vec3(a1.zw, h.w);
+    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+    p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+    vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+    m = m * m;
+    return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+  }
+
+  void main() {
+    vec3 viewDir = normalize(-vPosition);
+    float fresnel = pow(1.0 - dot(vNormal, viewDir), 2.0);
+
+    // Animated noise for energy surface
+    float noise1 = snoise(vNormal * 3.0 + uTime * 0.3);
+    float noise2 = snoise(vNormal * 5.0 - uTime * 0.2);
+    float combinedNoise = (noise1 + noise2 * 0.5) / 1.5;
+
+    // Golden/amber core colors
+    vec3 coreInner = vec3(1.0, 0.9, 0.6);
+    vec3 coreOuter = vec3(1.0, 0.6, 0.2);
+    vec3 energyColor = vec3(0.9, 0.7, 0.3);
+
+    // Slow pulse
+    float pulse = sin(uTime * 0.6) * 0.08 + 0.92;
+
+    // Surface energy pattern
+    float energyPattern = smoothstep(-0.2, 0.6, combinedNoise);
+    vec3 surfaceColor = mix(coreOuter, coreInner, energyPattern) * pulse;
+
+    // Strong fresnel glow
+    vec3 glow = energyColor * fresnel * 0.8 * pulse;
+
+    // Bright center
+    float centerGlow = pow(1.0 - fresnel, 2.0);
+    surfaceColor += vec3(1.0, 0.95, 0.8) * centerGlow * 0.5;
+
+    gl_FragColor = vec4(surfaceColor + glow, 1.0);
+  }
+`;
+
+/* ─── 3D Components ─── */
+
+function OrbitRing({
+  rx,
+  ry,
+  hovered,
+}: {
+  rx: number;
+  ry: number;
+  hovered: boolean;
+}) {
+  const points = useMemo(() => {
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 128; i++) {
+      const angle = (i / 128) * Math.PI * 2;
+      pts.push(
+        new THREE.Vector3(Math.cos(angle) * rx, 0, Math.sin(angle) * ry),
+      );
+    }
+    return pts;
+  }, [rx, ry]);
+
+  const geometry = useMemo(
+    () => new THREE.BufferGeometry().setFromPoints(points),
+    [points],
+  );
+
+  return (
+    <primitive
+      object={
+        new THREE.Line(
+          geometry,
+          new THREE.LineBasicMaterial({
+            color: hovered
+              ? new THREE.Color(0x4f46e5)
+              : new THREE.Color(0x1e1b4b),
+            transparent: true,
+            opacity: hovered ? 0.5 : 0.2,
+          }),
+        )
+      }
+    />
+  );
+}
+
+function Planet({
+  config,
+  speed,
+  hoveredPlanetId,
+  setHoveredPlanetId,
+  onPlanetClick,
+}: {
+  config: PlanetConfig;
+  speed: number;
+  hoveredPlanetId: number | null;
+  setHoveredPlanetId: (id: number | null) => void;
+  onPlanetClick: (id: number) => void;
+}) {
+  const groupRef = useRef<THREE.Group>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
+  const ringRef = useRef<THREE.Group>(null);
+  const satellitesRef = useRef<THREE.Group>(null);
+
+  // Each planet has its own independent angle - hover only affects this planet
+  const angleRef = useRef(config.startAngle);
+
+  const baseColor = useMemo(() => {
+    const c = new THREE.Color(config.hexColor);
+    return `${c.r.toFixed(3)}, ${c.g.toFixed(3)}, ${c.b.toFixed(3)}`;
+  }, [config.hexColor]);
+
+  const glowColor = useMemo(() => {
+    const c = new THREE.Color(config.hexColor);
+    return `${(c.r * 1.3).toFixed(3)}, ${(c.g * 1.3).toFixed(3)}, ${(c.b * 1.3).toFixed(3)}`;
+  }, [config.hexColor]);
+
+  const material = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: { uTime: { value: 0 } },
+      vertexShader: planetVertexShader,
+      fragmentShader: getPlanetFragmentShader(baseColor, glowColor),
+    });
+  }, [baseColor, glowColor]);
+
+  const glowMaterial = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: { uTime: { value: 0 } },
+      vertexShader: coreVertexShader,
+      fragmentShader: `
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        void main() {
+          vec3 viewDir = normalize(-vPosition);
+          float fresnel = pow(1.0 - dot(vNormal, viewDir), 2.0);
+          vec3 color = vec3(${glowColor}) * fresnel * 0.3;
+          gl_FragColor = vec4(color, fresnel * 0.25);
+        }
+      `,
+      transparent: true,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+  }, [glowColor]);
+
+  useFrame((state, delta) => {
+    if (!groupRef.current) return;
+
+    // Only slow down the hovered planet, others keep normal speed
+    const isHovered = hoveredPlanetId === config.id;
+    const speedModifier = isHovered ? 0.15 : 1.0;
+
+    // Update independent angle - other planets are unaffected
+    angleRef.current +=
+      delta * 0.15 * speed * config.speedCoeff * speedModifier;
+
+    const planetAngle = angleRef.current;
+
+    const x = Math.cos(planetAngle) * config.rx;
+    const z = Math.sin(planetAngle) * config.ry;
+    const depth = Math.sin(planetAngle);
+
+    const scale = 0.85 + (depth + 1) * 0.15;
+
+    groupRef.current.position.set(x, 0, z);
+    groupRef.current.scale.setScalar(scale * (isHovered ? 1.1 : 1.0));
+
+    // Very slow planet rotation
+    if (meshRef.current) {
+      meshRef.current.rotation.y = state.clock.elapsedTime * 0.05;
+    }
+
+    // Slow atmosphere pulse
+    if (glowRef.current) {
+      const pulse = 1.2 + Math.sin(state.clock.elapsedTime * 0.8) * 0.05;
+      glowRef.current.scale.setScalar(pulse);
+    }
+
+    // Slow ring rotation
+    if (ringRef.current) {
+      ringRef.current.rotation.z = state.clock.elapsedTime * 0.15;
+    }
+
+    // Slow satellites
+    if (satellitesRef.current) {
+      satellitesRef.current.rotation.y = state.clock.elapsedTime * 0.25;
+    }
+  });
+
+  return (
+    <group ref={groupRef}>
+      {/* Planet sphere */}
+      <mesh
+        ref={meshRef}
+        material={material}
+        onPointerEnter={() => setHoveredPlanetId(config.id)}
+        onPointerLeave={() => setHoveredPlanetId(null)}
+        onClick={() => onPlanetClick(config.id)}
+      >
+        <sphereGeometry args={[config.size, 32, 32]} />
+      </mesh>
+
+      {/* Atmosphere glow */}
+      <mesh ref={glowRef} material={glowMaterial}>
+        <sphereGeometry args={[config.size * 1.3, 16, 16]} />
+      </mesh>
+
+      {/* Planet-specific effects - slower and subtler */}
+      {config.id === 1 && (
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[config.size * 1.4, config.size * 1.55, 64]} />
+          <meshBasicMaterial
+            color={config.hexColor}
+            transparent
+            opacity={0.2}
+            side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      )}
+
+      {config.id === 2 && (
+        <group ref={ringRef}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[config.size * 1.8, config.size * 1.9, 64]} />
+            <meshBasicMaterial
+              color={config.hexColor}
+              transparent
+              opacity={0.15}
+              side={THREE.DoubleSide}
+              blending={THREE.AdditiveBlending}
+            />
+          </mesh>
+        </group>
+      )}
+
+      {config.id === 3 && (
+        <group ref={satellitesRef}>
+          {[0, 1, 2].map((i) => (
+            <mesh
+              key={i}
+              position={[
+                Math.cos((i * Math.PI * 2) / 3) * config.size * 1.8,
+                0,
+                Math.sin((i * Math.PI * 2) / 3) * config.size * 1.8,
+              ]}
+            >
+              <sphereGeometry args={[0.06, 8, 8]} />
+              <meshBasicMaterial
+                color={config.hexColor}
+                blending={THREE.AdditiveBlending}
+              />
+            </mesh>
+          ))}
+        </group>
+      )}
+
+      {config.id === 4 && (
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[config.size * 1.6, config.size * 1.75, 64]} />
+          <meshBasicMaterial
+            color={config.hexColor}
+            transparent
+            opacity={0.15}
+            side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+function Core({ onHover }: { onHover: (hovered: boolean) => void }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
+  const outerGlowRef = useRef<THREE.Mesh>(null);
+  const ringRef = useRef<THREE.Group>(null);
+  const particlesRef = useRef<THREE.Points>(null);
+
+  // Golden/amber energy material with noise
+  const material = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: { uTime: { value: 0 } },
+      vertexShader: coreVertexShader,
+      fragmentShader: enhancedCoreFragmentShader,
+    });
+  }, []);
+
+  // Inner glow - golden
+  const glowMat = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: { uTime: { value: 0 } },
+      vertexShader: coreVertexShader,
+      fragmentShader: `
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        void main() {
+          vec3 viewDir = normalize(-vPosition);
+          float fresnel = pow(1.0 - dot(vNormal, viewDir), 2.0);
+          vec3 color = vec3(1.0, 0.75, 0.3) * fresnel * 0.5;
+          gl_FragColor = vec4(color, fresnel * 0.35);
+        }
+      `,
+      transparent: true,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+  }, []);
+
+  // Outer glow - warm amber
+  const outerGlowMat = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: { uTime: { value: 0 } },
+      vertexShader: coreVertexShader,
+      fragmentShader: `
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        void main() {
+          vec3 viewDir = normalize(-vPosition);
+          float fresnel = pow(1.0 - dot(vNormal, viewDir), 2.0);
+          vec3 color = vec3(1.0, 0.6, 0.15) * fresnel * 0.25;
+          gl_FragColor = vec4(color, fresnel * 0.15);
+        }
+      `,
+      transparent: true,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+  }, []);
+
+  // Energy particles around core
+  const particleGeometry = useMemo(() => {
+    const count = 200;
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 1.2 + Math.random() * 0.8;
+      const height = (Math.random() - 0.5) * 0.3;
+      positions[i * 3] = Math.cos(angle) * radius;
+      positions[i * 3 + 1] = height;
+      positions[i * 3 + 2] = Math.sin(angle) * radius;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    return geo;
+  }, []);
+
+  useFrame((state) => {
+    const time = state.clock.elapsedTime;
+
+    if (meshRef.current) {
+      (meshRef.current.material as THREE.ShaderMaterial).uniforms.uTime.value =
+        time;
+      meshRef.current.rotation.y = time * 0.02;
+    }
+    if (glowRef.current) {
+      const pulse = Math.sin(time * 0.6) * 0.1 + 1.3;
+      glowRef.current.scale.setScalar(pulse);
+    }
+    if (outerGlowRef.current) {
+      const pulse = Math.sin(time * 0.4) * 0.12 + 2.2;
+      outerGlowRef.current.scale.setScalar(pulse);
+    }
+    // Rotating energy ring
+    if (ringRef.current) {
+      ringRef.current.rotation.z = time * 0.1;
+      ringRef.current.rotation.x = Math.sin(time * 0.15) * 0.2;
+    }
+    // Orbiting particles
+    if (particlesRef.current) {
+      particlesRef.current.rotation.y = time * 0.08;
+    }
+  });
+
+  return (
+    <group
+      ref={groupRef}
+      onPointerEnter={() => onHover(true)}
+      onPointerLeave={() => onHover(false)}
+    >
+      {/* Main core sphere - larger */}
+      <mesh ref={meshRef} material={material}>
+        <sphereGeometry args={[0.9, 64, 64]} />
+      </mesh>
+
+      {/* Inner glow */}
+      <mesh ref={glowRef} material={glowMat}>
+        <sphereGeometry args={[1.15, 32, 32]} />
+      </mesh>
+
+      {/* Outer glow */}
+      <mesh ref={outerGlowRef} material={outerGlowMat}>
+        <sphereGeometry args={[1.5, 32, 32]} />
+      </mesh>
+
+      {/* Rotating energy ring */}
+      <group ref={ringRef}>
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[1.6, 1.65, 128]} />
+          <meshBasicMaterial
+            color={0xffb347}
+            transparent
+            opacity={0.25}
+            side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+        <mesh rotation={[Math.PI / 2, 0, Math.PI / 6]}>
+          <ringGeometry args={[1.75, 1.78, 128]} />
+          <meshBasicMaterial
+            color={0xffd700}
+            transparent
+            opacity={0.15}
+            side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      </group>
+
+      {/* Orbiting energy particles */}
+      <points ref={particlesRef} geometry={particleGeometry}>
+        <pointsMaterial
+          color={0xffd700}
+          size={0.04}
+          transparent
+          opacity={0.6}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </points>
+    </group>
+  );
+}
+
+function Scene({
+  speed,
+  onPlanetClick,
+  hoveredPlanetId,
+  setHoveredPlanetId,
+  onCoreHover,
+}: {
+  speed: number;
+  onPlanetClick: (id: number) => void;
+  hoveredPlanetId: number | null;
+  setHoveredPlanetId: (id: number | null) => void;
+  onCoreHover: (hovered: boolean) => void;
+}) {
+  const { camera } = useThree();
+
+  useEffect(() => {
+    // Front-facing view - much more comfortable
+    camera.position.set(0, 4, 14);
+    camera.lookAt(0, 0, 0);
+  }, [camera]);
+
+  return (
+    <group rotation={[-Math.PI / 12, 0, 0]}>
+      {/* Core - AlkaidSTART */}
+      <Core onHover={onCoreHover} />
+
+      {/* Orbits */}
+      {PLANETS_CONFIG.map((planet) => (
+        <OrbitRing
+          key={`orbit-${planet.id}`}
+          rx={planet.rx}
+          ry={planet.ry}
+          hovered={hoveredPlanetId === planet.id}
+        />
+      ))}
+
+      {/* Planets - each has independent angle */}
+      {PLANETS_CONFIG.map((planet) => (
+        <Planet
+          key={planet.id}
+          config={planet}
+          speed={speed}
+          hoveredPlanetId={hoveredPlanetId}
+          setHoveredPlanetId={setHoveredPlanetId}
+          onPlanetClick={onPlanetClick}
+        />
+      ))}
+    </group>
+  );
+}
+
+/* ─── DOM HUD Overlay ─── */
+
+function PlanetLabel({
+  config,
+  speed,
+  hoveredPlanetId,
+}: {
+  config: PlanetConfig;
+  speed: number;
+  hoveredPlanetId: number | null;
+}) {
+  const [screenPos, setScreenPos] = useState<{
+    x: number;
+    y: number;
+    visible: boolean;
+  }>({
+    x: 0,
+    y: 0,
+    visible: false,
+  });
+
+  // Independent angle for label tracking - matches Planet's independent angle
+  const angleRef = useRef(config.startAngle);
+  const lastTimeRef = useRef<number>(0);
+
+  useEffect(() => {
+    let frameId: number;
+
+    const update = (time: number) => {
+      const delta = lastTimeRef.current
+        ? (time - lastTimeRef.current) / 1000
+        : 0.016;
+      lastTimeRef.current = time;
+
+      // Only slow down the hovered planet, others keep normal speed
+      const isHovered = hoveredPlanetId === config.id;
+      const speedModifier = isHovered ? 0.15 : 1.0;
+
+      // Update independent angle - same logic as Planet component
+      angleRef.current +=
+        delta * 0.15 * speed * config.speedCoeff * speedModifier;
+
+      const planetAngle = angleRef.current;
+
+      const x = Math.cos(planetAngle) * config.rx;
+      const z = Math.sin(planetAngle) * config.ry;
+      const depth = Math.sin(planetAngle);
+
+      // Front-facing projection
+      const distance = 14;
+      const tilt = -Math.PI / 12;
+      const projectedY = (x * Math.sin(tilt)) / (distance - z * Math.cos(tilt));
+      const projectedX = (x * Math.cos(tilt)) / (distance - z * Math.cos(tilt));
+
+      const screenX = 50 + projectedX * 25;
+      const screenY = 50 - projectedY * 25;
+      const visible = depth > -0.5;
+
+      setScreenPos({ x: screenX, y: screenY, visible });
+      frameId = requestAnimationFrame(update);
+    };
+
+    frameId = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(frameId);
+  }, [config, speed, hoveredPlanetId]);
+
+  if (!screenPos.visible) return null;
+
+  return (
+    <div
+      className="absolute pointer-events-none transition-opacity duration-300"
+      style={{
+        left: `${screenPos.x}%`,
+        top: `${screenPos.y}%`,
+        transform: "translate(-50%, -50%)",
+        opacity: screenPos.visible ? 1 : 0,
+      }}
+    >
+      <div className="font-[Orbitron] text-[0.7rem] font-medium tracking-[0.05em] text-[#9ca3af] bg-black/60 px-2 py-0.5 rounded border border-white/[0.05] whitespace-nowrap">
+        {config.name}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Core Info Panel ─── */
+
+function CoreInfoPanel({ visible }: { visible: boolean }) {
+  return (
+    <div
+      className={`absolute left-1/2 top-[15%] -translate-x-1/2 pointer-events-none transition-all duration-500 z-20 ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
+      }`}
+    >
+      <div className="bg-black/70 backdrop-blur-xl border border-amber-500/30 rounded-xl px-6 py-4 shadow-2xl shadow-amber-500/10 min-w-[320px] text-center">
+        {/* Title */}
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+          <h3 className="font-[Orbitron] text-lg font-bold text-amber-300 tracking-wider">
+            AlkaidSTART
+          </h3>
+          <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+        </div>
+
+        {/* Divider */}
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent mb-3" />
+
+        {/* Description */}
+        <p className="text-[0.8rem] text-amber-100/80 leading-relaxed mb-3">
+          Agent 项目生态系统的核心枢纽
+        </p>
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="bg-amber-500/10 rounded-lg py-2 px-1">
+            <div className="font-[Orbitron] text-xs text-amber-400 font-bold">
+              4
+            </div>
+            <div className="text-[0.6rem] text-amber-200/50 mt-0.5">AGENTS</div>
+          </div>
+          <div className="bg-amber-500/10 rounded-lg py-2 px-1">
+            <div className="font-[Orbitron] text-xs text-amber-400 font-bold">
+              99.9%
+            </div>
+            <div className="text-[0.6rem] text-amber-200/50 mt-0.5">UPTIME</div>
+          </div>
+          <div className="bg-amber-500/10 rounded-lg py-2 px-1">
+            <div className="font-[Orbitron] text-xs text-amber-400 font-bold">
+              24/7
+            </div>
+            <div className="text-[0.6rem] text-amber-200/50 mt-0.5">ONLINE</div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-3 text-[0.65rem] text-amber-200/40 font-[Orbitron] tracking-widest">
+          CORE SYSTEM // ACTIVE
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main Component ─── */
+
 export default function SolarSystem({
   speed,
   onPlanetClick,
 }: SolarSystemProps) {
-  const planetRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [hoveredPlanetId, setHoveredPlanetId] = useState<number | null>(null);
-  const angleRef = useRef<number>(0);
-  const requestRef = useRef<number>(0);
-
-  useEffect(() => {
-    const animate = () => {
-      const speedModifier = hoveredPlanetId !== null ? 0.15 : 1.0;
-      angleRef.current += 0.006 * speed * speedModifier;
-
-      PLANETS_CONFIG.forEach((planet, index) => {
-        const el = planetRefs.current[index];
-        if (!el) return;
-
-        const planetAngle =
-          angleRef.current * planet.speedCoeff + planet.startAngle;
-        const x = planet.rx * Math.cos(planetAngle);
-        const y = planet.ry * Math.sin(planetAngle);
-        const depth = Math.sin(planetAngle);
-
-        const scale = 0.85 + (depth + 1) * 0.15;
-        const opacity = 0.6 + (depth + 1) * 0.2;
-        const zIndex = Math.round(20 + depth * 10);
-        const blurAmount = depth < 0 ? Math.abs(depth) * 1.5 : 0;
-
-        el.style.transform = `translate3d(${x}px, ${y}px, 0px) translate(-50%, -50%) rotateX(-60deg)`;
-        el.style.zIndex = `${zIndex}`;
-        el.style.opacity = `${opacity}`;
-        el.style.filter = `blur(${blurAmount}px)`;
-        el.style.scale = `${scale}`;
-      });
-
-      requestRef.current = requestAnimationFrame(animate);
-    };
-
-    requestRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      cancelAnimationFrame(requestRef.current);
-    };
-  }, [speed, hoveredPlanetId]);
+  const [coreHovered, setCoreHovered] = useState(false);
 
   return (
-    <div className="flex-grow w-full h-full flex justify-center items-center relative z-[5]">
-      <div
-        className="relative w-[1000px] h-[700px] flex justify-center items-center"
-        style={{ perspective: "1200px" }}
+    <div className="flex-grow w-full h-full relative z-[5]">
+      {/* Three.js Canvas */}
+      <Canvas
+        camera={{ fov: 50, near: 0.1, far: 100 }}
+        gl={{
+          antialias: true,
+          alpha: true,
+          powerPreference: "high-performance",
+        }}
+        style={{ background: "transparent" }}
+        className="absolute inset-0"
       >
-        <div
-          className="absolute w-full h-full flex justify-center items-center"
-          style={{ transform: "rotateX(60deg)", transformStyle: "preserve-3d" }}
-        >
-          <div
-            className="absolute w-[100px] h-[100px] rounded-full flex justify-center items-center cursor-pointer z-10 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] animate-[core-pulse_4s_infinite_ease-in-out]"
-            style={{
-              background:
-                "radial-gradient(circle, #ffffff 0%, #1e1b4b 60%, #000000 100%)",
-              boxShadow:
-                "0 0 40px 10px var(--c-core-glow), inset 0 0 20px rgba(255, 255, 255, 0.4)",
-              transform: "translate3d(0, 0, 10px) rotateX(-60deg)",
-            }}
-          >
-            <div className="font-[Orbitron] text-xs font-bold tracking-[0.1em] text-white text-center pointer-events-none [text-shadow:0_0_8px_rgba(255,255,255,0.8)]">
-              ORCHESTRATOR
-              <br />
-              <span className="text-[0.55rem] opacity-70">CORE</span>
-            </div>
-          </div>
+        <Scene
+          speed={speed}
+          onPlanetClick={onPlanetClick}
+          hoveredPlanetId={hoveredPlanetId}
+          setHoveredPlanetId={setHoveredPlanetId}
+          onCoreHover={setCoreHovered}
+        />
+      </Canvas>
 
-          <svg
-            className="absolute w-full h-full pointer-events-none"
-            style={{ transformStyle: "preserve-3d" }}
-          >
-            {PLANETS_CONFIG.map((planet) => (
-              <ellipse
-                key={planet.id}
-                cx="50%"
-                cy="50%"
-                rx={planet.rx}
-                ry={planet.ry}
-                fill="none"
-                stroke={
-                  hoveredPlanetId === planet.id
-                    ? "var(--orbit-hover)"
-                    : "var(--orbit-color)"
-                }
-                strokeWidth={hoveredPlanetId === planet.id ? 1.5 : 1}
-                style={{
-                  transition: "stroke 0.3s ease",
-                  transformBox: "fill-box",
-                  transformOrigin: "center",
-                }}
-              />
-            ))}
-          </svg>
+      {/* Core Info Panel */}
+      <CoreInfoPanel visible={coreHovered} />
 
-          {PLANETS_CONFIG.map((planet, index) => (
-            <div
-              key={planet.id}
-              ref={(el) => {
-                planetRefs.current[index] = el;
-              }}
-              className="absolute top-1/2 left-1/2 cursor-pointer"
-              style={{ transformStyle: "preserve-3d" }}
-              onMouseEnter={() => setHoveredPlanetId(planet.id)}
-              onMouseLeave={() => setHoveredPlanetId(null)}
-              onClick={() => onPlanetClick(planet.id)}
-            >
-              <div className="relative flex flex-col items-center justify-center transition-transform duration-300">
-                <div
-                  className={`w-[50px] h-[50px] rounded-full relative flex justify-center items-center transition-all duration-300
-                    shadow-[inset_-8px_-8px_20px_rgba(0,0,0,0.8)] hover:scale-110
-                    after:content-[''] after:absolute after:inset-[-6px] after:rounded-full after:border after:border-transparent after:opacity-60 after:pointer-events-none`}
-                  style={{
-                    background:
-                      planet.id === 1
-                        ? "radial-gradient(circle at 30% 30%, #22d3ee 0%, #0891b2 50%, #000000 100%)"
-                        : planet.id === 2
-                          ? "radial-gradient(circle at 30% 30%, #34d399 0%, #059669 50%, #000000 100%)"
-                          : planet.id === 3
-                            ? "radial-gradient(circle at 30% 30%, #f472b6 0%, #db2777 50%, #000000 100%)"
-                            : "radial-gradient(circle at 30% 30%, #60a5fa 0%, #2563eb 50%, #000000 100%)",
-                  }}
-                >
-                  {planet.id === 1 && (
-                    <div className="absolute w-[75px] h-[75px] rounded-full border border-[rgba(6,182,212,0.4)] opacity-50 animate-[pulse-ring_2s_cubic-bezier(0.215,0.610,0.355,1)_infinite]" />
-                  )}
-
-                  {planet.id === 2 && (
-                    <div
-                      className="absolute w-[90px] h-[90px] border-[0.5px] border-dashed border-[rgba(16,185,129,0.3)] rounded-full animate-[rotate-clockwise_10s_linear_infinite]"
-                      style={{ transformStyle: "preserve-3d" }}
-                    >
-                      {[
-                        {
-                          top: "0",
-                          left: "50%",
-                          transform: "translate(-50%, -50%)",
-                        },
-                        {
-                          top: "50%",
-                          left: "100%",
-                          transform: "translate(-50%, -50%)",
-                        },
-                        {
-                          top: "100%",
-                          left: "50%",
-                          transform: "translate(-50%, -50%)",
-                        },
-                        {
-                          top: "50%",
-                          left: "0",
-                          transform: "translate(-50%, -50%)",
-                        },
-                      ].map((pos, i) => {
-                        const icons = [
-                          <Search key="s" />,
-                          <Code2 key="c" />,
-                          <Mail key="m" />,
-                          <Terminal key="t" />,
-                        ];
-                        return (
-                          <div
-                            key={i}
-                            className="absolute w-[14px] h-[14px] rounded-full bg-[#10b981] flex justify-center items-center shadow-[0_0_8px_#10b981]"
-                            style={pos}
-                          >
-                            {React.cloneElement(icons[i], {
-                              className: "w-[8px] h-[8px] text-black",
-                            })}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {planet.id === 3 && (
-                    <>
-                      <div
-                        className="absolute w-3 h-3 rounded-full bg-[#ec4899] shadow-[0_0_8px_rgba(236,72,153,0.4)] animate-[orbit-bubble-1_4s_linear_infinite]"
-                        style={{ transformStyle: "preserve-3d" }}
-                      />
-                      <div
-                        className="absolute w-3 h-3 rounded-full bg-[#ec4899] shadow-[0_0_8px_rgba(236,72,153,0.4)] animate-[orbit-bubble-2_4s_linear_infinite]"
-                        style={{ transformStyle: "preserve-3d" }}
-                      />
-                      <div
-                        className="absolute w-3 h-3 rounded-full bg-[#ec4899] shadow-[0_0_8px_rgba(236,72,153,0.4)] animate-[orbit-bubble-3_4s_linear_infinite]"
-                        style={{ transformStyle: "preserve-3d" }}
-                      />
-                    </>
-                  )}
-
-                  {planet.id === 4 && (
-                    <div className="absolute w-[70px] h-[70px] border border-dotted border-[rgba(59,130,246,0.4)] rounded-full animate-[pulse-rotate_5s_ease-in-out_infinite_alternate]" />
-                  )}
-                </div>
-
-                <div className="mt-2 font-[Orbitron] text-[0.7rem] font-medium tracking-[0.05em] text-[#9ca3af] bg-black/60 px-2 py-0.5 rounded border border-white/[0.05] pointer-events-none whitespace-nowrap group-hover:text-white group-hover:border-white/20">
-                  {planet.name}
-                </div>
-
-                <div
-                  className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-[230px] px-4 py-3 opacity-0 pointer-events-none transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.1)] z-[100] flex flex-col gap-1.5 border-l-[3px] glass-panel scale-90 group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto group-hover:-translate-y-[120%]"
-                  style={{
-                    borderLeftColor: planet.color,
-                    boxShadow: `0 8px 32px 0 rgba(0, 0, 0, 0.8), 0 0 15px ${planet.color}15`,
-                  }}
-                >
-                  <div
-                    className="font-[Orbitron] text-[0.8rem] font-bold tracking-[0.05em] text-white"
-                    style={{ color: planet.color }}
-                  >
-                    {planet.name}
-                  </div>
-                  <div className="text-[0.7rem] text-[#9ca3af] leading-[1.3]">
-                    {planet.desc}
-                  </div>
-                  <div className="h-px bg-white/[0.08] my-0.5"></div>
-                  <div className="flex flex-col gap-0.5 font-[JetBrains_Mono] text-[0.65rem]">
-                    {planet.stats.map((stat, sIndex) => (
-                      <div key={sIndex} className="flex justify-between">
-                        <span className="text-[#9ca3af]">{stat.label}:</span>
-                        <span
-                          className="text-white"
-                          style={{ color: planet.color }}
-                        >
-                          {stat.value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <div
-                    className="text-[0.55rem] font-[JetBrains_Mono] text-right tracking-[0.05em] mt-1"
-                    style={{ color: planet.color }}
-                  >
-                    &gt; CLICK TO DEPLOY &lt;
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* DOM Labels Overlay */}
+      <div className="absolute inset-0 pointer-events-none">
+        {PLANETS_CONFIG.map((planet) => (
+          <PlanetLabel
+            key={`label-${planet.id}`}
+            config={planet}
+            speed={speed}
+            hoveredPlanetId={hoveredPlanetId}
+          />
+        ))}
       </div>
     </div>
   );

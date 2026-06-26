@@ -1,233 +1,268 @@
-import { useEffect, useRef } from 'react';
+import { useRef, useMemo } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import * as THREE from "three";
 
-interface Star {
-  x: number;
-  y: number;
-  size: number;
-  baseOpacity: number;
-  opacity: number;
-  twinkleSpeed: number;
-  color: string;
-}
+const STAR_COUNT = 6000;
+const NEBULA_COLORS = [
+  new THREE.Color(0x581c87), // purple
+  new THREE.Color(0x06b6d4), // cyan
+];
 
-interface ShootingStar {
-  x: number;
-  y: number;
-  length: number;
-  speed: number;
-  angle: number;
-  active: boolean;
-}
+function Stars() {
+  const pointsRef = useRef<THREE.Points>(null);
 
-export default function Starfield() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [positions, colors, sizes, twinkleSpeed] = useMemo(() => {
+    const pos = new Float32Array(STAR_COUNT * 3);
+    const col = new Float32Array(STAR_COUNT * 3);
+    const sz = new Float32Array(STAR_COUNT);
+    const ts = new Float32Array(STAR_COUNT);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    for (let i = 0; i < STAR_COUNT; i++) {
+      // Spherical distribution with depth
+      const r = 400 + Math.random() * 600;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+      pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      pos[i * 3 + 2] = r * Math.cos(phi);
 
-    let animationFrameId: number;
-    let stars: Star[] = [];
-    let shootingStar: ShootingStar = {
-      x: 0,
-      y: 0,
-      length: 0,
-      speed: 0,
-      angle: 0,
-      active: false,
-    };
-
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      initStars();
-    };
-
-    const initStars = () => {
-      stars = [];
-      const numStars = Math.floor((canvas.width * canvas.height) / 8000);
-      const starColors = [
-        '#ffffff',
-        '#e0f2fe',
-        '#f0f9ff',
-        '#ccfbf1',
-        '#fae8ff',
-        '#e0e7ff',
-      ];
-
-      for (let i = 0; i < numStars; i++) {
-        const baseOpacity = Math.random() * 0.5 + 0.1;
-        stars.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          size: Math.random() * 1.5 + 0.5,
-          baseOpacity,
-          opacity: baseOpacity,
-          twinkleSpeed: Math.random() * 0.02 + 0.005,
-          color: starColors[Math.floor(Math.random() * starColors.length)],
-        });
-      }
-    };
-
-    const triggerShootingStar = () => {
-      if (shootingStar.active) return;
-      
-      const side = Math.random() > 0.5 ? 'top' : 'left';
-      shootingStar = {
-        x: side === 'top' ? Math.random() * canvas.width * 0.8 : 0,
-        y: side === 'top' ? 0 : Math.random() * canvas.height * 0.5,
-        length: Math.random() * 80 + 40,
-        speed: Math.random() * 8 + 6,
-        angle: Math.PI / 6 + (Math.random() * Math.PI) / 12, // 30-45 degrees down-right
-        active: true,
-      };
-    };
-
-    const updateAndDraw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // 1. Draw space nebula glow background (soft colorful gradients)
-      const grad = ctx.createRadialGradient(
-        canvas.width * 0.5,
-        canvas.height * 0.5,
-        10,
-        canvas.width * 0.5,
-        canvas.height * 0.5,
-        canvas.width * 0.8
-      );
-      grad.addColorStop(0, '#04020a');
-      grad.addColorStop(0.5, '#010103');
-      grad.addColorStop(1, '#000000');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Subtle cyan-purple nebulae glows
-      ctx.save();
-      ctx.globalCompositeOperation = 'screen';
-      
-      // Purple glow top right
-      const purpleGlow = ctx.createRadialGradient(
-        canvas.width * 0.8,
-        canvas.height * 0.2,
-        0,
-        canvas.width * 0.8,
-        canvas.height * 0.2,
-        canvas.width * 0.4
-      );
-      purpleGlow.addColorStop(0, 'rgba(88, 28, 135, 0.08)');
-      purpleGlow.addColorStop(0.5, 'rgba(88, 28, 135, 0.03)');
-      purpleGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = purpleGlow;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Blue-cyan glow bottom left
-      const cyanGlow = ctx.createRadialGradient(
-        canvas.width * 0.2,
-        canvas.height * 0.8,
-        0,
-        canvas.width * 0.2,
-        canvas.height * 0.8,
-        canvas.width * 0.5
-      );
-      cyanGlow.addColorStop(0, 'rgba(6, 182, 212, 0.05)');
-      cyanGlow.addColorStop(0.5, 'rgba(6, 182, 212, 0.015)');
-      cyanGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = cyanGlow;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      ctx.restore();
-
-      // 2. Update and Draw Stars
-      stars.forEach((star) => {
-        // Simple sin-based twinkling
-        star.opacity = star.baseOpacity + Math.sin(Date.now() * star.twinkleSpeed) * 0.15;
-        // Clamp
-        star.opacity = Math.max(0.05, Math.min(0.8, star.opacity));
-
-        ctx.fillStyle = star.color;
-        ctx.globalAlpha = star.opacity;
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      // 3. Update and Draw Shooting Star
-      if (shootingStar.active) {
-        const rad = shootingStar.angle;
-        const dx = Math.cos(rad) * shootingStar.speed;
-        const dy = Math.sin(rad) * shootingStar.speed;
-
-        shootingStar.x += dx;
-        shootingStar.y += dy;
-
-        // Draw tail gradient
-        ctx.save();
-        ctx.globalAlpha = 0.8;
-        const tailGrad = ctx.createLinearGradient(
-          shootingStar.x,
-          shootingStar.y,
-          shootingStar.x - Math.cos(rad) * shootingStar.length,
-          shootingStar.y - Math.sin(rad) * shootingStar.length
+      // Star colors: mostly white/blue with some warm
+      const colorChoice = Math.random();
+      let c: THREE.Color;
+      if (colorChoice < 0.7) {
+        c = new THREE.Color().setHSL(
+          0.6 + Math.random() * 0.1,
+          0.2,
+          0.8 + Math.random() * 0.2,
         );
-        tailGrad.addColorStop(0, '#ffffff');
-        tailGrad.addColorStop(0.1, '#a5f3fc');
-        tailGrad.addColorStop(1, 'rgba(165, 243, 252, 0)');
-        ctx.strokeStyle = tailGrad;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(shootingStar.x, shootingStar.y);
-        ctx.lineTo(
-          shootingStar.x - Math.cos(rad) * shootingStar.length,
-          shootingStar.y - Math.sin(rad) * shootingStar.length
+      } else if (colorChoice < 0.9) {
+        c = new THREE.Color().setHSL(
+          0.55,
+          0.3 + Math.random() * 0.3,
+          0.7 + Math.random() * 0.2,
         );
-        ctx.stroke();
-        ctx.restore();
-
-        // Check if out of bounds
-        if (
-          shootingStar.x > canvas.width ||
-          shootingStar.y > canvas.height ||
-          shootingStar.x < 0 ||
-          shootingStar.y < 0
-        ) {
-          shootingStar.active = false;
-        }
       } else {
-        // Randomly spawn a shooting star (approx. every 10 seconds or 0.15% chance per frame)
-        if (Math.random() < 0.0015) {
-          triggerShootingStar();
-        }
+        c = new THREE.Color().setHSL(0.05, 0.3, 0.8);
       }
+      col[i * 3] = c.r;
+      col[i * 3 + 1] = c.g;
+      col[i * 3 + 2] = c.b;
 
-      ctx.globalAlpha = 1.0;
-      animationFrameId = requestAnimationFrame(updateAndDraw);
-    };
+      sz[i] = Math.random() * 1.5 + 0.3;
+      ts[i] = Math.random() * 0.015 + 0.003;
+    }
 
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-    updateAndDraw();
+    return [pos, col, sz, ts];
+  }, []);
 
-    return () => {
-      window.removeEventListener('resize', resizeCanvas);
-      cancelAnimationFrame(animationFrameId);
-    };
+  const shaderMaterial = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+      },
+      vertexShader: `
+        attribute float size;
+        attribute vec3 color;
+        attribute float twinkleSpeed;
+        varying vec3 vColor;
+        varying float vAlpha;
+        uniform float uTime;
+        uniform float uPixelRatio;
+
+        void main() {
+          vColor = color;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          float twinkle = sin(uTime * twinkleSpeed * 80.0) * 0.2 + 0.8;
+          vAlpha = twinkle;
+          gl_PointSize = size * uPixelRatio * (250.0 / -mvPosition.z) * twinkle;
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        varying float vAlpha;
+
+        void main() {
+          float dist = length(gl_PointCoord - vec2(0.5));
+          if (dist > 0.5) discard;
+          float alpha = smoothstep(0.5, 0.15, dist) * vAlpha;
+          gl_FragColor = vec4(vColor, alpha);
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+  }, []);
+
+  // Very slow rotation - almost static
+  useFrame((state) => {
+    if (pointsRef.current) {
+      shaderMaterial.uniforms.uTime.value = state.clock.elapsedTime;
+      pointsRef.current.rotation.y = state.clock.elapsedTime * 0.0005;
+    }
+  });
+
+  return (
+    <points ref={pointsRef} material={shaderMaterial}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+        <bufferAttribute attach="attributes-color" args={[colors, 3]} />
+        <bufferAttribute attach="attributes-size" args={[sizes, 1]} />
+        <bufferAttribute
+          attach="attributes-twinkleSpeed"
+          args={[twinkleSpeed, 1]}
+        />
+      </bufferGeometry>
+    </points>
+  );
+}
+
+function ShootingStar() {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const trailRef = useRef<THREE.Mesh>(null);
+  const data = useRef({
+    active: false,
+    pos: new THREE.Vector3(),
+    velocity: new THREE.Vector3(),
+    life: 0,
+    delay: Math.random() * 8 + 5,
+  });
+
+  const spawn = () => {
+    const d = data.current;
+    d.active = true;
+    d.life = 1.0;
+    const angle = Math.random() * Math.PI * 2;
+    const height = (Math.random() - 0.5) * 400;
+    d.pos.set(Math.cos(angle) * 600, height, Math.sin(angle) * 600);
+    d.velocity.set(
+      -Math.cos(angle) * (60 + Math.random() * 30),
+      -15 - Math.random() * 20,
+      -Math.sin(angle) * (60 + Math.random() * 30),
+    );
+  };
+
+  useFrame((_, delta) => {
+    const d = data.current;
+
+    if (!d.active) {
+      d.delay -= delta;
+      if (d.delay <= 0) {
+        spawn();
+        d.delay = Math.random() * 12 + 8;
+      }
+      if (meshRef.current) meshRef.current.visible = false;
+      if (trailRef.current) trailRef.current.visible = false;
+      return;
+    }
+
+    d.life -= delta * 0.6;
+    if (d.life <= 0 || d.pos.y < -400) {
+      d.active = false;
+      return;
+    }
+
+    d.pos.addScaledVector(d.velocity, delta);
+
+    if (meshRef.current) {
+      meshRef.current.visible = true;
+      meshRef.current.position.copy(d.pos);
+      meshRef.current.lookAt(d.pos.clone().add(d.velocity));
+    }
+
+    if (trailRef.current) {
+      trailRef.current.visible = true;
+      trailRef.current.position.copy(d.pos);
+      trailRef.current.lookAt(d.pos.clone().add(d.velocity));
+      (trailRef.current.material as THREE.MeshBasicMaterial).opacity =
+        d.life * 0.6;
+    }
+  });
+
+  return (
+    <group>
+      <mesh ref={meshRef} visible={false}>
+        <sphereGeometry args={[0.6, 8, 8]} />
+        <meshBasicMaterial color="#ffffff" />
+      </mesh>
+      <mesh ref={trailRef} visible={false}>
+        <coneGeometry args={[0.2, 25, 8]} />
+        <meshBasicMaterial
+          color="#a5f3fc"
+          transparent
+          opacity={0.6}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+function Nebula() {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  const shaderMaterial = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uColor1: { value: NEBULA_COLORS[0] },
+        uColor2: { value: NEBULA_COLORS[1] },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor1;
+        uniform vec3 uColor2;
+        varying vec2 vUv;
+
+        void main() {
+          float dist1 = distance(vUv, vec2(0.8, 0.2));
+          float dist2 = distance(vUv, vec2(0.2, 0.8));
+          float glow1 = exp(-dist1 * dist1 * 3.0) * 0.06;
+          float glow2 = exp(-dist2 * dist2 * 2.0) * 0.04;
+          vec3 color = uColor1 * glow1 + uColor2 * glow2;
+          gl_FragColor = vec4(color, glow1 + glow2);
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.BackSide,
+    });
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        zIndex: 0,
-        pointerEvents: 'none',
-      }}
-    />
+    <mesh ref={meshRef} material={shaderMaterial}>
+      <sphereGeometry args={[900, 32, 32]} />
+    </mesh>
+  );
+}
+
+export default function Starfield() {
+  return (
+    <div className="fixed inset-0 z-0">
+      <Canvas
+        camera={{ position: [0, 0, 300], fov: 60, near: 0.1, far: 2000 }}
+        gl={{
+          antialias: true,
+          alpha: false,
+          powerPreference: "high-performance",
+        }}
+        style={{ background: "#000000" }}
+      >
+        <color attach="background" args={["#000000"]} />
+        <fog attach="fog" args={["#000000", 500, 1500]} />
+        <Nebula />
+        <Stars />
+        <ShootingStar />
+      </Canvas>
+    </div>
   );
 }
