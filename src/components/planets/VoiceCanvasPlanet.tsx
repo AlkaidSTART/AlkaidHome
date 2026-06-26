@@ -1,13 +1,7 @@
-import { useRef } from "react";
 import * as THREE from "three";
 import type { PlanetVisualProps } from "./types";
 
-export default function VoiceCanvasPlanet({
-  config,
-  satellitesRef,
-}: PlanetVisualProps) {
-  const ringRef = useRef<THREE.Group>(null);
-
+export default function VoiceCanvasPlanet({ config }: PlanetVisualProps) {
   return (
     <group>
       {/* Deep atmosphere layers — Neptune has thick methane atmosphere */}

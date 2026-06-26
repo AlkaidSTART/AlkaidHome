@@ -11,6 +11,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { gsap } from "gsap";
+import { useTranslation } from "react-i18next";
 
 interface ProjectDetailsProps {
   planetId: number | null;
@@ -19,30 +20,40 @@ interface ProjectDetailsProps {
 
 interface ProjectData {
   id: number;
-  title: string;
-  badge: string;
-  subtitle: string;
-  description: string;
+  titleKey: string;
+  badgeKey: string;
+  subtitleKey: string;
+  descriptionKey: string;
   color: string;
-  metrics: { label: string; value: string }[];
+  metrics: { labelKey: string; value: string }[];
   code: string;
 }
 
 const PROJECTS_DATA: Record<number, ProjectData> = {
   1: {
     id: 1,
-    title: "VoiceCanvas",
-    badge: "Multimodal Real-Time Interaction",
-    subtitle:
-      "Real-time duplex voice interaction engine featuring low latency and expressive synthesis.",
-    description:
-      "VoiceCanvas integrates Voice Activity Detection (VAD), Automatic Speech Recognition (ASR), Large Language Model orchestration, and Text-to-Speech (TTS) synthesis into a unified, high-performance streaming pipeline. Built to support conversational agents that feel natural, mimicking human turn-taking and emotional response inflections.",
+    titleKey: "projectDetails.voiceCanvas.title",
+    badgeKey: "projectDetails.voiceCanvas.badge",
+    subtitleKey: "projectDetails.voiceCanvas.subtitle",
+    descriptionKey: "projectDetails.voiceCanvas.description",
     color: "var(--c-planet-1)",
     metrics: [
-      { label: "Latency", value: "120ms" },
-      { label: "Audio Quality", value: "Opus 48kHz" },
-      { label: "MOS Score", value: "4.65" },
-      { label: "GPU Concurrency", value: "1.2k streams" },
+      {
+        labelKey: "projectDetails.voiceCanvas.metrics.latency",
+        value: "120ms",
+      },
+      {
+        labelKey: "projectDetails.voiceCanvas.metrics.audioQuality",
+        value: "Opus 48kHz",
+      },
+      {
+        labelKey: "projectDetails.voiceCanvas.metrics.mosScore",
+        value: "4.65",
+      },
+      {
+        labelKey: "projectDetails.voiceCanvas.metrics.gpuConcurrency",
+        value: "1.2k streams",
+      },
     ],
     code: `// VoiceCanvas Real-Time Streaming Orchestration
 import { VADStream, TTSClient, LLMChain } from '@voicecanvas/core';
@@ -67,18 +78,28 @@ export async function startDuplexStream(userStream: MediaStream) {
   },
   2: {
     id: 2,
-    title: "Autonomous Task Agent",
-    badge: "ReAct Tool Use Specialist",
-    subtitle:
-      "An autonomous agent that reasons, plans, and writes code to accomplish multi-step objectives.",
-    description:
-      "Autonomous Task Agent utilizes advanced ReAct (Reasoning and Acting) prompt topologies to self-correct and execute complex code, terminal commands, web search queries, and email dispatches. Outfitted with safety sandboxes to prevent data loss while offering powerful execution capability.",
+    titleKey: "projectDetails.autonomousAgent.title",
+    badgeKey: "projectDetails.autonomousAgent.badge",
+    subtitleKey: "projectDetails.autonomousAgent.subtitle",
+    descriptionKey: "projectDetails.autonomousAgent.description",
     color: "var(--c-planet-2)",
     metrics: [
-      { label: "Task Success Rate", value: "94.2%" },
-      { label: "Avg Steps / Task", value: "12 steps" },
-      { label: "Tokens Saved", value: "68%" },
-      { label: "Sandboxed Runs", value: "48k / day" },
+      {
+        labelKey: "projectDetails.autonomousAgent.metrics.taskSuccessRate",
+        value: "94.2%",
+      },
+      {
+        labelKey: "projectDetails.autonomousAgent.metrics.avgSteps",
+        value: "12 steps",
+      },
+      {
+        labelKey: "projectDetails.autonomousAgent.metrics.tokensSaved",
+        value: "68%",
+      },
+      {
+        labelKey: "projectDetails.autonomousAgent.metrics.sandboxedRuns",
+        value: "48k / day",
+      },
     ],
     code: `// ReAct Loop with Sandbox Execution
 import { LLMModel, Sandbox, WebSearch } from '@taskagent/tools';
@@ -106,18 +127,28 @@ export async function runAgentLoop(taskDescription: string) {
   },
   3: {
     id: 3,
-    title: "Multi-Agent System",
-    badge: "Collaborative Ecosystem",
-    subtitle:
-      "A distributed system where specialized agents negotiate and review work to achieve high-quality results.",
-    description:
-      "Instead of relying on a single generalist model, the Multi-Agent System breaks tasks down and assigns them to specialized agents: Researcher, Writer, and Critic. They collaborate via an asynchronous message-passing queue, debating drafts and correcting errors automatically before final output generation.",
+    titleKey: "projectDetails.multiAgent.title",
+    badgeKey: "projectDetails.multiAgent.badge",
+    subtitleKey: "projectDetails.multiAgent.subtitle",
+    descriptionKey: "projectDetails.multiAgent.description",
     color: "var(--c-planet-3)",
     metrics: [
-      { label: "Agent Count", value: "3 Active" },
-      { label: "Consensus Rate", value: "98.5%" },
-      { label: "Avg Iterations", value: "4.2 cycles" },
-      { label: "Topic Diversity", value: "140 categories" },
+      {
+        labelKey: "projectDetails.multiAgent.metrics.agentCount",
+        value: "3 Active",
+      },
+      {
+        labelKey: "projectDetails.multiAgent.metrics.consensusRate",
+        value: "98.5%",
+      },
+      {
+        labelKey: "projectDetails.multiAgent.metrics.avgIterations",
+        value: "4.2 cycles",
+      },
+      {
+        labelKey: "projectDetails.multiAgent.metrics.topicDiversity",
+        value: "140 categories",
+      },
     ],
     code: `// Asynchronous Multi-Agent Collaboration Broker
 import { Queue, ResearcherAgent, WriterAgent, CriticAgent } from '@multiagent/broker';
@@ -149,18 +180,28 @@ export async function coordinateResearchAndWriting(topic: string) {
   },
   4: {
     id: 4,
-    title: "Agentic RAG & Memory Hub",
-    badge: "Knowledge Retainer",
-    subtitle:
-      "High recall semantic search database coupled with episodic agent memory layers.",
-    description:
-      "This module acts as the long-term memory for our AI system. It implements hybrid keyword/vector search (RAG) using cosine similarity on high-dimensional text embeddings, alongside a persistent graph database that models semantic relationships, ensuring agents remember previous user interactions and domain files.",
+    titleKey: "projectDetails.agenticRag.title",
+    badgeKey: "projectDetails.agenticRag.badge",
+    subtitleKey: "projectDetails.agenticRag.subtitle",
+    descriptionKey: "projectDetails.agenticRag.description",
     color: "var(--c-planet-4)",
     metrics: [
-      { label: "Vector Nodes", value: "1.2M docs" },
-      { label: "Query Latency", value: "14ms" },
-      { label: "Recall Rate", value: "99.2%" },
-      { label: "Memory hit rate", value: "88%" },
+      {
+        labelKey: "projectDetails.agenticRag.metrics.vectorNodes",
+        value: "1.2M docs",
+      },
+      {
+        labelKey: "projectDetails.agenticRag.metrics.queryLatency",
+        value: "14ms",
+      },
+      {
+        labelKey: "projectDetails.agenticRag.metrics.recallRate",
+        value: "99.2%",
+      },
+      {
+        labelKey: "projectDetails.agenticRag.metrics.memoryHitRate",
+        value: "88%",
+      },
     ],
     code: `// Hybrid RAG Vector Retrieval & Memory Graph Query
 import { VectorStore, GraphDB, EmbeddingModel } from '@memory/rag';
@@ -186,13 +227,24 @@ export default function ProjectDetails({
   planetId,
   onClose,
 }: ProjectDetailsProps) {
+  const { t } = useTranslation();
+
+  const AGENT_NAME_MAP: Record<string, string> = {
+    Researcher: "projectDetails.multiAgent.agentResearcher",
+    Writer: "projectDetails.multiAgent.agentWriter",
+    Critic: "projectDetails.multiAgent.agentCritic",
+  };
+
+  const getAgentDisplayName = (name: string) => {
+    return AGENT_NAME_MAP[name] ? t(AGENT_NAME_MAP[name]) : name;
+  };
   const overlayRef = useRef<HTMLDivElement>(null);
   const activeProject = planetId ? PROJECTS_DATA[planetId] : null;
 
   const [voiceIsListening, setVoiceIsListening] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState<string[]>([
-    "VoiceCanvas initialized.",
-    "System: Please press the microphone button to speak.",
+    "VoiceCanvas: Online.",
+    "System: Click the microphone button to speak.",
   ]);
   const [userSpeechInput, setUserSpeechInput] = useState("");
 
@@ -231,25 +283,25 @@ export default function ProjectDetails({
 
     if (planetId === 1) {
       setVoiceTranscript([
-        "VoiceCanvas: Online.",
-        "System: Click the microphone to start speaking with the Voice AI.",
+        t("projectDetails.voiceCanvas.listenPrompt"),
+        t("projectDetails.voiceCanvas.systemPrompt"),
       ]);
     } else if (planetId === 2) {
       setTerminalCommands([
-        "Autonomous Task Agent Terminal v1.0.0",
-        'Type "help" to list instructions, or click quick tasks below.',
+        t("projectDetails.autonomousAgent.terminalPrompt"),
+        t("projectDetails.autonomousAgent.helpPrompt"),
       ]);
     } else if (planetId === 3) {
       setMultiAgentLogs([
         {
           sender: "System",
-          text: "Multi-Agent Broker Idle. Awaiting collaboration trigger.",
+          text: t("projectDetails.multiAgent.systemIdle"),
           status: "IDLE",
           avatarBg: "rgba(255,255,255,0.1)",
         },
       ]);
     }
-  }, [planetId]);
+  }, [planetId, t]);
 
   useEffect(() => {
     if (terminalContentRef.current) {
@@ -638,21 +690,23 @@ export default function ProjectDetails({
               color: activeProject.color,
             }}
           >
-            {activeProject.badge}
+            {t(activeProject.badgeKey)}
           </span>
           <h2
             className="font-[Orbitron] text-3xl font-extrabold text-white tracking-[0.05em]"
             style={{ textShadow: `0 0 15px ${activeProject.color}30` }}
           >
-            {activeProject.title}
+            {t(activeProject.titleKey)}
           </h2>
-          <p className="text-sm text-[#9ca3af]">{activeProject.subtitle}</p>
+          <p className="text-sm text-[#9ca3af]">
+            {t(activeProject.subtitleKey)}
+          </p>
         </div>
         <button
           onClick={handleClose}
           className="bg-white/[0.03] border border-white/[0.08] text-white font-[Orbitron] text-[0.8rem] font-semibold tracking-[0.05em] px-5 py-2.5 rounded-md cursor-pointer flex items-center gap-2 transition-all duration-300 hover:bg-white/[0.1] hover:border-white/30 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:-translate-y-0.5"
         >
-          <X size={16} /> CLOSE HUD
+          <X size={16} /> {t("projectDetails.common.closeHud")}
         </button>
       </div>
 
@@ -660,10 +714,10 @@ export default function ProjectDetails({
         <div className="flex flex-col gap-8">
           <div className="sub-panel glass-panel p-6">
             <h3 className="font-[Orbitron] text-base font-bold tracking-[0.05em] mb-4 text-white border-b border-white/[0.05] pb-2">
-              Overview
+              {t("projectDetails.common.overview")}
             </h3>
             <p className="leading-relaxed text-sm text-[#9ca3af]">
-              {activeProject.description}
+              {t(activeProject.descriptionKey)}
             </p>
           </div>
 
@@ -673,7 +727,7 @@ export default function ProjectDetails({
               style={{ borderLeft: `3px solid ${activeProject.color}` }}
             >
               <h3 className="font-[Orbitron] text-base font-bold tracking-[0.05em] mb-4 text-white border-b border-white/[0.05] pb-2">
-                Interactive Voice Console
+                {t("projectDetails.voiceCanvas.consoleTitle")}
               </h3>
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-4">
@@ -699,7 +753,9 @@ export default function ProjectDetails({
                         voiceIsListening ? "animate-[blink_1s_infinite]" : ""
                       }
                     />
-                    {voiceIsListening ? "STOP RECORDING" : "TAP TO SPEAK"}
+                    {voiceIsListening
+                      ? t("projectDetails.voiceCanvas.stopRecording")
+                      : t("projectDetails.voiceCanvas.tapToSpeak")}
                   </button>
 
                   <div className="flex-grow h-[120px] bg-black/40 rounded-lg border border-white/[0.05] flex items-center justify-center gap-[3px] px-4 overflow-hidden">
@@ -739,7 +795,9 @@ export default function ProjectDetails({
                     type="text"
                     value={userSpeechInput}
                     onChange={(e) => setUserSpeechInput(e.target.value)}
-                    placeholder="Type speech input here if microphone is not available..."
+                    placeholder={t(
+                      "projectDetails.voiceCanvas.speechPlaceholder",
+                    )}
                     className="bg-black/40 border border-[rgba(6,182,212,0.3)] px-4 py-2.5 rounded-md text-white font-[JetBrains_Mono] text-[0.8rem] flex-grow outline-none focus:border-[#3b82f6] focus:shadow-[0_0_10px_rgba(59,130,246,0.2)] transition-all duration-300"
                   />
                   <button
@@ -759,7 +817,7 @@ export default function ProjectDetails({
               style={{ borderLeft: `3px solid ${activeProject.color}` }}
             >
               <h3 className="font-[Orbitron] text-base font-bold tracking-[0.05em] mb-4 text-white border-b border-white/[0.05] pb-2">
-                Autonomous Action Sandbox
+                {t("projectDetails.autonomousAgent.sandboxTitle")}
               </h3>
               <div className="flex flex-col gap-4">
                 <div className="font-[JetBrains_Mono] bg-[#020204] border border-[rgba(16,185,129,0.2)] rounded-lg overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)]">
@@ -782,7 +840,9 @@ export default function ProjectDetails({
                     ))}
                     {isTerminalRunning && (
                       <div className="flex items-center gap-1.5 text-[#10b981]">
-                        <span>&gt; Processing reasoning steps...</span>
+                        <span>
+                          &gt; {t("projectDetails.autonomousAgent.processing")}
+                        </span>
                         <div className="w-1.5 h-1.5 bg-[#10b981] rounded-full shadow-[0_0_6px_#10b981] animate-[blink_2s_infinite_ease-in-out]"></div>
                       </div>
                     )}
@@ -799,8 +859,8 @@ export default function ProjectDetails({
                         onChange={(e) => setTerminalInput(e.target.value)}
                         placeholder={
                           isTerminalRunning
-                            ? "Agent is busy working..."
-                            : 'Type "help" or your custom command...'
+                            ? t("projectDetails.autonomousAgent.agentBusy")
+                            : t("projectDetails.autonomousAgent.helpInput")
                         }
                         disabled={isTerminalRunning}
                         className="bg-transparent border-none outline-none text-[#10b981] font-[JetBrains_Mono] text-xs flex-grow"
@@ -815,21 +875,21 @@ export default function ProjectDetails({
                     disabled={isTerminalRunning}
                     className="bg-[rgba(16,185,129,0.05)] border border-[rgba(16,185,129,0.2)] text-white font-[Orbitron] text-[0.7rem] font-semibold tracking-[0.05em] px-3.5 py-1.5 rounded-md cursor-pointer flex items-center gap-2 transition-all duration-300 hover:bg-white/[0.1] hover:border-white/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Quick Task: Run Code Tests
+                    {t("projectDetails.autonomousAgent.quickTaskRunTests")}
                   </button>
                   <button
                     onClick={() => runTerminalCommand("research")}
                     disabled={isTerminalRunning}
                     className="bg-[rgba(16,185,129,0.05)] border border-[rgba(16,185,129,0.2)] text-white font-[Orbitron] text-[0.7rem] font-semibold tracking-[0.05em] px-3.5 py-1.5 rounded-md cursor-pointer flex items-center gap-2 transition-all duration-300 hover:bg-white/[0.1] hover:border-white/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Quick Task: Scrape Web Research
+                    {t("projectDetails.autonomousAgent.quickTaskResearch")}
                   </button>
                   <button
                     onClick={() => runTerminalCommand("status")}
                     disabled={isTerminalRunning}
                     className="bg-white/[0.03] border border-white/[0.08] text-white font-[Orbitron] text-[0.7rem] font-semibold tracking-[0.05em] px-3.5 py-1.5 rounded-md cursor-pointer flex items-center gap-2 transition-all duration-300 hover:bg-white/[0.1] hover:border-white/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Agent Status Diagnostics
+                    {t("projectDetails.autonomousAgent.quickTaskStatus")}
                   </button>
                 </div>
               </div>
@@ -842,7 +902,7 @@ export default function ProjectDetails({
               style={{ borderLeft: `3px solid ${activeProject.color}` }}
             >
               <h3 className="font-[Orbitron] text-base font-bold tracking-[0.05em] mb-4 text-white border-b border-white/[0.05] pb-2">
-                Collab Board (Research &rarr; Write &rarr; Critique)
+                {t("projectDetails.multiAgent.collabBoardTitle")}
               </h3>
               <div className="flex flex-col gap-4">
                 <div className="flex justify-between items-center">
@@ -862,13 +922,14 @@ export default function ProjectDetails({
                   >
                     <Users size={14} />
                     {isCollabActive
-                      ? "COLLABORATION IN PROGRESS..."
-                      : "START COLLAB PROCESS"}
+                      ? t("projectDetails.multiAgent.collaborationInProgress")
+                      : t("projectDetails.multiAgent.startCollaboration")}
                   </button>
 
                   {isCollabActive && (
                     <span className="text-[0.7rem] text-[#ec4899] font-[JetBrains_Mono]">
-                      Active Node: {currentActiveAgent}
+                      {t("projectDetails.multiAgent.activeNode")}:{" "}
+                      {getAgentDisplayName(currentActiveAgent || "")}
                     </span>
                   )}
                 </div>
@@ -877,18 +938,37 @@ export default function ProjectDetails({
                   {[
                     {
                       name: "Researcher",
+                      nameKey: "projectDetails.multiAgent.agentResearcher",
                       icon: <Search size={12} className="text-black" />,
                       color: "var(--c-planet-1)",
+                      activeStatusKey:
+                        "projectDetails.multiAgent.statusWorking",
+                      activeTextKey:
+                        "projectDetails.multiAgent.researcherActiveText",
+                      idleTextKey:
+                        "projectDetails.multiAgent.researcherIdleText",
                     },
                     {
                       name: "Writer",
+                      nameKey: "projectDetails.multiAgent.agentWriter",
                       icon: <Code2 size={12} className="text-black" />,
                       color: "var(--c-planet-4)",
+                      activeStatusKey:
+                        "projectDetails.multiAgent.statusComposing",
+                      activeTextKey:
+                        "projectDetails.multiAgent.writerActiveText",
+                      idleTextKey: "projectDetails.multiAgent.writerIdleText",
                     },
                     {
                       name: "Critic",
+                      nameKey: "projectDetails.multiAgent.agentCritic",
                       icon: <Activity size={12} className="text-black" />,
                       color: "var(--c-planet-3)",
+                      activeStatusKey:
+                        "projectDetails.multiAgent.statusAuditing",
+                      activeTextKey:
+                        "projectDetails.multiAgent.criticActiveText",
+                      idleTextKey: "projectDetails.multiAgent.criticIdleText",
                     },
                   ].map((agent) => {
                     const isActive = currentActiveAgent === agent.name;
@@ -905,33 +985,21 @@ export default function ProjectDetails({
                             {agent.icon}
                           </div>
                           <span className="font-[Orbitron] text-[0.75rem] font-bold text-white">
-                            {agent.name}
+                            {t(agent.nameKey)}
                           </span>
                           <span
                             className="text-[0.6rem] uppercase px-1.5 py-0.5 rounded bg-white/[0.05]"
                             style={{ color: isActive ? agent.color : "" }}
                           >
                             {isActive
-                              ? agent.name === "Researcher"
-                                ? "WORKING"
-                                : agent.name === "Writer"
-                                  ? "COMPOSING"
-                                  : "AUDITING"
-                              : "IDLE"}
+                              ? t(agent.activeStatusKey)
+                              : t("projectDetails.multiAgent.statusIdle")}
                           </span>
                         </div>
                         <p className="text-[0.7rem] text-[#9ca3af] h-[60px] overflow-hidden leading-[1.4]">
                           {isActive
-                            ? agent.name === "Researcher"
-                              ? "Extracting references and compiling data nodes..."
-                              : agent.name === "Writer"
-                                ? "Drafting outline and content elements..."
-                                : "Performing quality checks and score validation..."
-                            : agent.name === "Researcher"
-                              ? "Waiting for research topic query..."
-                              : agent.name === "Writer"
-                                ? "Awaiting research facts list..."
-                                : "Awaiting writer draft submission..."}
+                            ? t(agent.activeTextKey)
+                            : t(agent.idleTextKey)}
                         </p>
                       </div>
                     );
@@ -953,7 +1021,7 @@ export default function ProjectDetails({
                 {collabOutput && (
                   <div className="mt-4 bg-black/30 border border-white/[0.05] rounded-lg p-4">
                     <span className="text-[0.7rem] uppercase text-[#9ca3af] font-[JetBrains_Mono] block mb-2">
-                      Final Generated Output v2
+                      {t("projectDetails.multiAgent.finalOutputTitle")}
                     </span>
                     <div className="text-[0.75rem] leading-[1.5] text-[#f3f4f6] max-h-[150px] overflow-y-auto">
                       {collabOutput}
@@ -970,7 +1038,7 @@ export default function ProjectDetails({
               style={{ borderLeft: `3px solid ${activeProject.color}` }}
             >
               <h3 className="font-[Orbitron] text-base font-bold tracking-[0.05em] mb-4 text-white border-b border-white/[0.05] pb-2">
-                Vector Query Simulator
+                {t("projectDetails.agenticRag.queryTitle")}
               </h3>
               <div className="flex flex-col gap-4">
                 <form onSubmit={handleRagSearch} className="flex gap-2 mb-4">
@@ -983,7 +1051,9 @@ export default function ProjectDetails({
                       type="text"
                       value={ragQuery}
                       onChange={(e) => setRagQuery(e.target.value)}
-                      placeholder="Ask RAG database (e.g. 'cosine similarity formula', 'episodic memory')..."
+                      placeholder={t(
+                        "projectDetails.agenticRag.queryPlaceholder",
+                      )}
                       className="bg-black/40 border border-[rgba(59,130,246,0.3)] pl-9 pr-4 py-2.5 rounded-md text-white font-[JetBrains_Mono] text-[0.8rem] flex-grow outline-none focus:border-[#3b82f6] focus:shadow-[0_0_10px_rgba(59,130,246,0.2)] transition-all duration-300"
                     />
                   </div>
@@ -991,7 +1061,7 @@ export default function ProjectDetails({
                     type="submit"
                     className="bg-[#3b82f6] text-white border-none font-[Orbitron] text-[0.8rem] font-bold px-5 py-2.5 rounded-md cursor-pointer flex items-center gap-2 transition-all duration-300 hover:bg-[#2563eb]"
                   >
-                    QUERY DB
+                    {t("projectDetails.agenticRag.queryButton")}
                   </button>
                 </form>
 
@@ -1007,7 +1077,8 @@ export default function ProjectDetails({
                             {res.title}
                           </span>
                           <span className="font-[JetBrains_Mono] text-[0.65rem] text-[#fbbf24]">
-                            Sim: {res.score.toFixed(3)}
+                            {t("projectDetails.agenticRag.similarity")}:{" "}
+                            {res.score.toFixed(3)}
                           </span>
                         </div>
                         <p className="text-[0.75rem] text-[#9ca3af] leading-[1.4]">
@@ -1018,8 +1089,7 @@ export default function ProjectDetails({
                   ) : (
                     <div className="text-center p-8 border-[1.5px] border-dashed border-white/[0.05] rounded-lg text-[#9ca3af] text-[0.8rem]">
                       <Database size={24} className="mx-auto mb-2 opacity-30" />
-                      No active query. Type a keyword query above to simulate
-                      vector semantic lookup.
+                      {t("projectDetails.agenticRag.noQuery")}
                     </div>
                   )}
                 </div>
@@ -1029,7 +1099,7 @@ export default function ProjectDetails({
 
           <div className="sub-panel glass-panel p-6">
             <h3 className="font-[Orbitron] text-base font-bold tracking-[0.05em] mb-4 text-white border-b border-white/[0.05] pb-2">
-              Architecture Pipeline
+              {t("projectDetails.common.architecturePipeline")}
             </h3>
             <div className="flex flex-wrap gap-2 items-center">
               {planetId === 1 && (
@@ -1038,30 +1108,30 @@ export default function ProjectDetails({
                     className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]"
                     style={{ borderColor: "var(--c-planet-1)" }}
                   >
-                    PCM Audio
+                    {t("projectDetails.voiceCanvas.pipeline.pcmAudio")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    VADStream
+                    {t("projectDetails.voiceCanvas.pipeline.vadStream")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    ASR API
+                    {t("projectDetails.voiceCanvas.pipeline.asrApi")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    LLM Chain
+                    {t("projectDetails.voiceCanvas.pipeline.llmChain")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    TTS Core
+                    {t("projectDetails.voiceCanvas.pipeline.ttsCore")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div
                     className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]"
                     style={{ borderColor: "var(--c-planet-1)" }}
                   >
-                    Audio Queue
+                    {t("projectDetails.voiceCanvas.pipeline.audioQueue")}
                   </div>
                 </>
               )}
@@ -1071,30 +1141,32 @@ export default function ProjectDetails({
                     className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]"
                     style={{ borderColor: "var(--c-planet-2)" }}
                   >
-                    User Goal
+                    {t("projectDetails.autonomousAgent.pipeline.userGoal")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    LLM Planner
+                    {t("projectDetails.autonomousAgent.pipeline.llmPlanner")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    Tool Dispatcher
+                    {t(
+                      "projectDetails.autonomousAgent.pipeline.toolDispatcher",
+                    )}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    Docker Sandbox
+                    {t("projectDetails.autonomousAgent.pipeline.dockerSandbox")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    Observer
+                    {t("projectDetails.autonomousAgent.pipeline.observer")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div
                     className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]"
                     style={{ borderColor: "var(--c-planet-2)" }}
                   >
-                    Result Export
+                    {t("projectDetails.autonomousAgent.pipeline.resultExport")}
                   </div>
                 </>
               )}
@@ -1104,30 +1176,30 @@ export default function ProjectDetails({
                     className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]"
                     style={{ borderColor: "var(--c-planet-3)" }}
                   >
-                    Input Prompt
+                    {t("projectDetails.multiAgent.pipeline.inputPrompt")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    Broker Queue
+                    {t("projectDetails.multiAgent.pipeline.brokerQueue")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    Researcher
+                    {t("projectDetails.multiAgent.pipeline.researcher")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    Writer
+                    {t("projectDetails.multiAgent.pipeline.writer")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    Critic Audit
+                    {t("projectDetails.multiAgent.pipeline.criticAudit")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div
                     className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]"
                     style={{ borderColor: "var(--c-planet-3)" }}
                   >
-                    Consensus Output
+                    {t("projectDetails.multiAgent.pipeline.consensusOutput")}
                   </div>
                 </>
               )}
@@ -1137,30 +1209,30 @@ export default function ProjectDetails({
                     className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]"
                     style={{ borderColor: "var(--c-planet-4)" }}
                   >
-                    Raw Query
+                    {t("projectDetails.agenticRag.pipeline.rawQuery")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    Text Embedder
+                    {t("projectDetails.agenticRag.pipeline.textEmbedder")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    Annoy Vector Index
+                    {t("projectDetails.agenticRag.pipeline.annoyVectorIndex")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    Graph Episodic DB
+                    {t("projectDetails.agenticRag.pipeline.graphEpisodicDb")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]">
-                    Reranker Model
+                    {t("projectDetails.agenticRag.pipeline.rerankerModel")}
                   </div>
                   <span className="text-[#9ca3af]">→</span>
                   <div
                     className="px-3 py-1.5 rounded text-[0.75rem] font-[JetBrains_Mono] bg-white/[0.02] border border-white/[0.05]"
                     style={{ borderColor: "var(--c-planet-4)" }}
                   >
-                    Prompt Context
+                    {t("projectDetails.agenticRag.pipeline.promptContext")}
                   </div>
                 </>
               )}
@@ -1176,7 +1248,7 @@ export default function ProjectDetails({
                 className="inline mr-1.5 align-middle"
                 style={{ color: activeProject.color }}
               />
-              Telemetry Metrics
+              {t("projectDetails.common.telemetryMetrics")}
             </h3>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-4">
               {activeProject.metrics.map((met, i) => (
@@ -1185,7 +1257,7 @@ export default function ProjectDetails({
                   className="border border-white/[0.04] bg-white/[0.01] p-4 rounded-lg flex flex-col gap-1"
                 >
                   <span className="text-[0.65rem] uppercase text-[#9ca3af] tracking-[0.05em]">
-                    {met.label}
+                    {t(met.labelKey)}
                   </span>
                   <span
                     className="font-[JetBrains_Mono] text-xl font-bold text-white"
@@ -1205,7 +1277,7 @@ export default function ProjectDetails({
                 className="inline mr-1.5 align-middle"
                 style={{ color: activeProject.color }}
               />
-              Reference Implementation
+              {t("projectDetails.common.referenceImplementation")}
             </h3>
             <pre className="bg-black/40 border border-white/[0.05] rounded-lg p-4 overflow-x-auto text-xs leading-[1.6] font-[JetBrains_Mono] text-[#f3f4f6] max-h-[500px] overflow-y-auto">
               <code>{highlightCode(activeProject.code)}</code>

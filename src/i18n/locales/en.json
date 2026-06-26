@@ -74,11 +74,22 @@
     }
   },
   "projectDetails": {
+    "common": {
+      "closeHud": "CLOSE HUD",
+      "overview": "Overview",
+      "architecturePipeline": "Architecture Pipeline",
+      "telemetryMetrics": "Telemetry Metrics",
+      "referenceImplementation": "Reference Implementation"
+    },
     "voiceCanvas": {
       "title": "VoiceCanvas",
       "badge": "Multimodal Real-Time Interaction",
       "subtitle": "Real-time duplex voice interaction engine featuring low latency and expressive synthesis.",
       "description": "VoiceCanvas integrates Voice Activity Detection (VAD), Automatic Speech Recognition (ASR), Large Language Model orchestration, and Text-to-Speech (TTS) synthesis into a unified, high-performance streaming pipeline. Built to support conversational agents that feel natural, mimicking human turn-taking and emotional response inflections.",
+      "consoleTitle": "Interactive Voice Console",
+      "stopRecording": "STOP RECORDING",
+      "tapToSpeak": "TAP TO SPEAK",
+      "speechPlaceholder": "Type speech input here if microphone is not available...",
       "metrics": {
         "latency": "Latency",
         "audioQuality": "Audio Quality",
@@ -86,13 +97,28 @@
         "gpuConcurrency": "GPU Concurrency"
       },
       "listenPrompt": "VoiceCanvas: Online.",
-      "systemPrompt": "System: Click the microphone to start speaking with the Voice AI."
+      "systemPrompt": "System: Click the microphone to start speaking with the Voice AI.",
+      "pipeline": {
+        "pcmAudio": "PCM Audio",
+        "vadStream": "VADStream",
+        "asrApi": "ASR API",
+        "llmChain": "LLM Chain",
+        "ttsCore": "TTS Core",
+        "audioQueue": "Audio Queue"
+      }
     },
     "autonomousAgent": {
       "title": "Autonomous Task Agent",
       "badge": "ReAct Tool Use Specialist",
       "subtitle": "An autonomous agent that reasons, plans, and writes code to accomplish multi-step objectives.",
       "description": "Autonomous Task Agent utilizes advanced ReAct (Reasoning and Acting) prompt topologies to self-correct and execute complex code, terminal commands, web search queries, and email dispatches. Outfitted with safety sandboxes to prevent data loss while offering powerful execution capability.",
+      "sandboxTitle": "Autonomous Action Sandbox",
+      "processing": "Processing reasoning steps...",
+      "agentBusy": "Agent is busy working...",
+      "helpInput": "Type \"help\" or your custom command...",
+      "quickTaskRunTests": "Quick Task: Run Code Tests",
+      "quickTaskResearch": "Quick Task: Scrape Web Research",
+      "quickTaskStatus": "Agent Status Diagnostics",
       "metrics": {
         "taskSuccessRate": "Task Success Rate",
         "avgSteps": "Avg Steps / Task",
@@ -100,31 +126,78 @@
         "sandboxedRuns": "Sandboxed Runs"
       },
       "terminalPrompt": "Autonomous Task Agent Terminal v1.0.0",
-      "helpPrompt": "Type \"help\" to list instructions, or click quick tasks below."
+      "helpPrompt": "Type \"help\" to list instructions, or click quick tasks below.",
+      "pipeline": {
+        "userGoal": "User Goal",
+        "llmPlanner": "LLM Planner",
+        "toolDispatcher": "Tool Dispatcher",
+        "dockerSandbox": "Docker Sandbox",
+        "observer": "Observer",
+        "resultExport": "Result Export"
+      }
     },
     "multiAgent": {
       "title": "Multi-Agent System",
       "badge": "Collaborative Ecosystem",
       "subtitle": "A distributed system where specialized agents negotiate and review work to achieve high-quality results.",
       "description": "Instead of relying on a single generalist model, the Multi-Agent System breaks tasks down and assigns them to specialized agents: Researcher, Writer, and Critic. They collaborate via an asynchronous message-passing queue, debating drafts and correcting errors automatically before final output generation.",
+      "collabBoardTitle": "Collab Board (Research → Write → Critique)",
+      "startCollaboration": "START COLLAB PROCESS",
+      "collaborationInProgress": "COLLABORATION IN PROGRESS...",
+      "activeNode": "Active Node",
+      "agentResearcher": "Researcher",
+      "agentWriter": "Writer",
+      "agentCritic": "Critic",
+      "statusWorking": "WORKING",
+      "statusComposing": "COMPOSING",
+      "statusAuditing": "AUDITING",
+      "statusIdle": "IDLE",
+      "researcherActiveText": "Extracting references and compiling data nodes...",
+      "writerActiveText": "Drafting outline and content elements...",
+      "criticActiveText": "Performing quality checks and score validation...",
+      "researcherIdleText": "Waiting for research topic query...",
+      "writerIdleText": "Awaiting research facts list...",
+      "criticIdleText": "Awaiting writer draft submission...",
+      "finalOutputTitle": "Final Generated Output v2",
       "metrics": {
         "agentCount": "Agent Count",
         "consensusRate": "Consensus Rate",
         "avgIterations": "Avg Iterations",
         "topicDiversity": "Topic Diversity"
       },
-      "systemIdle": "Multi-Agent Broker Idle. Awaiting collaboration trigger."
+      "systemIdle": "Multi-Agent Broker Idle. Awaiting collaboration trigger.",
+      "pipeline": {
+        "inputPrompt": "Input Prompt",
+        "brokerQueue": "Broker Queue",
+        "researcher": "Researcher",
+        "writer": "Writer",
+        "criticAudit": "Critic Audit",
+        "consensusOutput": "Consensus Output"
+      }
     },
     "agenticRag": {
       "title": "Agentic RAG & Memory Hub",
       "badge": "Knowledge Retainer",
       "subtitle": "High recall semantic search database coupled with episodic agent memory layers.",
       "description": "This module acts as the long-term memory for our AI system. It implements hybrid keyword/vector search (RAG) using cosine similarity on high-dimensional text embeddings, alongside a persistent graph database that models semantic relationships, ensuring agents remember previous user interactions and domain files.",
+      "queryTitle": "Vector Query Simulator",
+      "queryButton": "QUERY DB",
+      "queryPlaceholder": "Ask RAG database (e.g. 'cosine similarity formula', 'episodic memory')...",
+      "similarity": "Sim",
+      "noQuery": "No active query. Type a keyword query above to simulate vector semantic lookup.",
       "metrics": {
         "vectorNodes": "Vector Nodes",
         "queryLatency": "Query Latency",
         "recallRate": "Recall Rate",
         "memoryHitRate": "Memory Hit Rate"
+      },
+      "pipeline": {
+        "rawQuery": "Raw Query",
+        "textEmbedder": "Text Embedder",
+        "annoyVectorIndex": "Annoy Vector Index",
+        "graphEpisodicDb": "Graph Episodic DB",
+        "rerankerModel": "Reranker Model",
+        "promptContext": "Prompt Context"
       }
     }
   },
