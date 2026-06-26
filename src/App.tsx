@@ -1,122 +1,77 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useEffect } from 'react';
+import { Orbit } from 'lucide-react';
+import Starfield from './components/Starfield';
+import SolarSystem from './components/SolarSystem';
+import ConsolePanel from './components/ConsolePanel';
+import ProjectDetails from './components/ProjectDetails';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [orbitSpeed, setOrbitSpeed] = useState<number>(1.0);
+  const [activePlanetId, setActivePlanetId] = useState<number | null>(null);
+  const [activePlanetName, setActivePlanetName] = useState<string | null>(null);
+  const [time, setTime] = useState<string>('');
+
+  // Update clock
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setTime(now.toLocaleDateString() + ' ' + now.toTimeString().split(' ')[0]);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Update current active planet name for console telemetries
+  useEffect(() => {
+    if (activePlanetId === 1) setActivePlanetName('VoiceCanvas');
+    else if (activePlanetId === 2) setActivePlanetName('Autonomous Task Agent');
+    else if (activePlanetId === 3) setActivePlanetName('Multi-Agent System');
+    else if (activePlanetId === 4) setActivePlanetName('Agentic RAG & Memory Hub');
+    else setActivePlanetName(null);
+  }, [activePlanetId]);
 
   return (
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      {/* 1. Stardust Twinkling Stars Background */}
+      <Starfield />
 
-      <div className="ticks"></div>
+      {/* 2. Cyber HUD Grid and Scanlines Overlay */}
+      <div className="hud-grid"></div>
+      <div className="hud-scanline"></div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      {/* 3. Header Bar */}
+      <header className="header-bar">
+        <div className="brand">
+          <Orbit size={20} className="spin" style={{ color: 'var(--c-planet-1)' }} />
+          <span>COSMIC AGENTIC CANVAS</span>
+          <div className="brand-dot"></div>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
+        <div className="system-clock">
+          SYS_TIME: {time}
         </div>
-      </section>
+      </header>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
+      {/* 4. Central 3D Solar System Space Stage */}
+      <main style={{ flexGrow: 1, display: 'flex', width: '100%' }}>
+        <SolarSystem 
+          speed={orbitSpeed} 
+          onPlanetClick={(id) => setActivePlanetId(id)} 
+        />
+      </main>
+
+      {/* 5. Details Fullscreen HUD Overlay */}
+      <ProjectDetails 
+        planetId={activePlanetId} 
+        onClose={() => setActivePlanetId(null)} 
+      />
+
+      {/* 6. Bottom Console Status and Control Panel */}
+      <ConsolePanel 
+        speed={orbitSpeed} 
+        setSpeed={setOrbitSpeed}
+        activePlanetName={activePlanetName}
+      />
     </>
-  )
+  );
 }
-
-export default App
