@@ -6,7 +6,7 @@ import ConsolePanel from "./components/ConsolePanel";
 import ProjectDetails from "./components/ProjectDetails";
 
 export default function App() {
-  const [orbitSpeed, setOrbitSpeed] = useState<number>(1.0);
+  const [orbitSpeed, setOrbitSpeed] = useState<number>(0.2);
   const [activePlanetId, setActivePlanetId] = useState<number | null>(null);
   const [activePlanetName, setActivePlanetName] = useState<string | null>(null);
   const [time, setTime] = useState<string>("");
@@ -54,7 +54,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-grow flex w-full">
+      <main className="w-full">
         <SolarSystem
           speed={orbitSpeed}
           onPlanetClick={(id) => setActivePlanetId(id)}
