@@ -6,11 +6,26 @@ import VoiceCanvasPlanet from "./planets/VoiceCanvasPlanet";
 import AutonomousAgentPlanet from "./planets/AutonomousAgentPlanet";
 import MultiAgentPlanet from "./planets/MultiAgentPlanet";
 import AgenticRagPlanet from "./planets/AgenticRagPlanet";
-import { ORBITS, type OrbitParams } from "./OrbitalContext";
+import { useAppStore } from "../store";
+
+export interface OrbitParams {
+  a: number;
+  e: number;
+  i: number;
+  omega: number;
+  M0: number;
+  period: number;
+}
+
+export const ORBITS: OrbitParams[] = [
+  { a: 1.5, e: 0.12, i: 0.05, omega: 0.5, M0: 0, period: 6 },
+  { a: 2.3, e: 0.1, i: -0.04, omega: 2.0, M0: Math.PI / 3, period: 12 },
+  { a: 3.1, e: 0.08, i: 0.03, omega: 3.8, M0: Math.PI * 0.7, period: 20 },
+  { a: 3.9, e: 0.1, i: -0.02, omega: 5.2, M0: Math.PI * 1.3, period: 32 },
+];
 
 interface SolarSystemProps {
   speed: number;
-  onPlanetClick: (id: number) => void;
 }
 
 interface PlanetConfig {
@@ -275,22 +290,20 @@ function PlanetVisual({
 function Planet({
   config,
   index,
-  hoveredPlanetId,
-  setHoveredPlanetId,
-  onPlanetClick,
   speed,
 }: {
   config: PlanetConfig;
   index: number;
-  hoveredPlanetId: number | null;
-  setHoveredPlanetId: (id: number | null) => void;
-  onPlanetClick: (id: number) => void;
   speed: number;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const satellitesRef = useRef<THREE.Group>(null);
+
+  const hoveredPlanetId = useAppStore((state) => state.hoveredPlanetId);
+  const setHoveredPlanetId = useAppStore((state) => state.setHoveredPlanetId);
+  const setActivePlanetId = useAppStore((state) => state.setActivePlanetId);
 
   const orbit = ORBITS[index];
   
@@ -388,7 +401,7 @@ function Planet({
         material={material}
         onPointerEnter={() => setHoveredPlanetId(config.id)}
         onPointerLeave={() => setHoveredPlanetId(null)}
-        onClick={() => onPlanetClick(config.id)}
+        onClick={() => setActivePlanetId(config.id)}
       >
         <sphereGeometry args={[config.size, 32, 32]} />
       </mesh>
@@ -638,18 +651,12 @@ function Core({ onHover }: { onHover: (hovered: boolean) => void }) {
 
 function Scene({
   speed,
-  onPlanetClick,
-  hoveredPlanetId,
-  setHoveredPlanetId,
-  onCoreHover,
 }: {
   speed: number;
-  onPlanetClick: (id: number) => void;
-  hoveredPlanetId: number | null;
-  setHoveredPlanetId: (id: number | null) => void;
-  onCoreHover: (hovered: boolean) => void;
 }) {
   const { camera } = useThree();
+  const hoveredPlanetId = useAppStore((state) => state.hoveredPlanetId);
+  const setCoreHovered = useAppStore((state) => state.setCoreHovered);
 
   useEffect(() => {
     camera.position.set(0, 1.2, 12);
@@ -658,7 +665,7 @@ function Scene({
 
   return (
     <group rotation={[Math.PI / 5, 0, 0]}>
-      <Core onHover={onCoreHover} />
+      <Core onHover={setCoreHovered} />
 
       {PLANETS_CONFIG.map((planet, index) => (
         <OrbitLine
@@ -674,9 +681,6 @@ function Scene({
           key={planet.id}
           config={planet}
           index={index}
-          hoveredPlanetId={hoveredPlanetId}
-          setHoveredPlanetId={setHoveredPlanetId}
-          onPlanetClick={onPlanetClick}
           speed={speed}
         />
       ))}
@@ -805,10 +809,8 @@ function CoreInfoPanel({ visible }: { visible: boolean }) {
 
 export default function SolarSystem({
   speed,
-  onPlanetClick,
 }: SolarSystemProps) {
-  const [hoveredPlanetId, setHoveredPlanetId] = useState<number | null>(null);
-  const [coreHovered, setCoreHovered] = useState(false);
+  const coreHovered = useAppStore((state) => state.coreHovered);
 
   return (
     <div className="w-full relative z-[5]">
@@ -829,13 +831,7 @@ export default function SolarSystem({
             height: "100vh",
           }}
         >
-          <Scene
-            speed={speed}
-            onPlanetClick={onPlanetClick}
-            hoveredPlanetId={hoveredPlanetId}
-            setHoveredPlanetId={setHoveredPlanetId}
-            onCoreHover={setCoreHovered}
-          />
+          <Scene speed={speed} />
         </Canvas>
       </div>
 
