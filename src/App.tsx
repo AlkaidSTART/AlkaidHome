@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import Starfield from "./components/Starfield";
 import SolarSystem from "./components/SolarSystem";
 import ConsolePanel from "./components/ConsolePanel";
-import ProjectDetails from "./components/ProjectDetails";
+ import ProjectDetails from "./components/project-details";
 import { useAppStore } from "./store";
 
 class ErrorBoundary extends React.Component<

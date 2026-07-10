@@ -1,4 +1,5 @@
 import type * as THREE from "three";
+import type { PlanetConfig } from "./config";
 
 export interface PlanetVisualProps {
   config: {
@@ -8,3 +9,5 @@ export interface PlanetVisualProps {
   };
   satellitesRef: React.RefObject<THREE.Group | null>;
 }
+
+export type { PlanetConfig };
