@@ -636,36 +636,102 @@ export default function ProjectDetails({
   };
 
   const highlightCode = (rawCode: string) => {
-    return rawCode.split("\n").map((line, i) => {
-      let formatted = line;
-      formatted = formatted.replace(
-        /\b(import|export|const|let|async|await|function|new|return|class|from|while|if|else)\b/g,
-        '<span class="text-[#f472b6]">$1</span>',
-      );
-      formatted = formatted.replace(
-        /\b(startDuplexStream|runAgentLoop|coordinateResearchAndWriting|queryMemory|similaritySearch|query|exec|observe|plan|nextAction|interrupt|generateStream|synthesizeChunk|gatherData|composeDraft|analyzeDraft|refineDraft|playAudio|mergeAndRerank)\b/g,
-        '<span class="text-[#60a5fa]">$1</span>',
-      );
-      formatted = formatted.replace(
-        /(['"`])(.*?)\1/g,
-        "<span class=\"text-[#86efac]\">'$2'</span>",
-      );
-      formatted = formatted.replace(
-        /\b(\d+)\b/g,
-        '<span class="text-[#fbbf24]">$1</span>',
-      );
-      formatted = formatted.replace(
-        /(\/\/.*)/g,
-        '<span class="text-[#6b7280]">$1</span>',
-      );
+    const keywords = [
+      "import", "export", "const", "let", "async", "await", "function",
+      "new", "return", "class", "from", "while", "if", "else",
+    ];
+    const functions = [
+      "startDuplexStream", "runAgentLoop", "coordinateResearchAndWriting",
+      "queryMemory", "similaritySearch", "query", "exec", "observe",
+      "plan", "nextAction", "interrupt", "generateStream", "synthesizeChunk",
+      "gatherData", "composeDraft", "analyzeDraft", "refineDraft",
+      "playAudio", "mergeAndRerank",
+    ];
 
-      return (
-        <div
-          key={i}
-          dangerouslySetInnerHTML={{ __html: formatted || "&nbsp;" }}
-        />
-      );
-    });
+    const highlightLine = (line: string): React.ReactNode[] => {
+      const result: React.ReactNode[] = [];
+      let remaining = line;
+      let key = 0;
+
+      const commentMatch = remaining.match(/^(\/\/.*)/);
+      if (commentMatch) {
+        result.push(
+          <span key={key++} className="text-[#6b7280]">
+            {commentMatch[1]}
+          </span>,
+        );
+        return result;
+      }
+
+      while (remaining.length > 0) {
+        let matched = false;
+
+        const stringMatch = remaining.match(/^(['"`])(.*?)\1/);
+        if (stringMatch) {
+          result.push(
+            <span key={key++} className="text-[#86efac]">
+              {stringMatch[0]}
+            </span>,
+          );
+          remaining = remaining.slice(stringMatch[0].length);
+          matched = true;
+          continue;
+        }
+
+        const funcMatch = new RegExp(`^(${functions.join("|")})\\b`).exec(
+          remaining,
+        );
+        if (funcMatch) {
+          result.push(
+            <span key={key++} className="text-[#60a5fa]">
+              {funcMatch[1]}
+            </span>,
+          );
+          remaining = remaining.slice(funcMatch[1].length);
+          matched = true;
+          continue;
+        }
+
+        const keywordMatch = new RegExp(`^(${keywords.join("|")})\\b`).exec(
+          remaining,
+        );
+        if (keywordMatch) {
+          result.push(
+            <span key={key++} className="text-[#f472b6]">
+              {keywordMatch[1]}
+            </span>,
+          );
+          remaining = remaining.slice(keywordMatch[1].length);
+          matched = true;
+          continue;
+        }
+
+        const numberMatch = remaining.match(/^(\d+)/);
+        if (numberMatch) {
+          result.push(
+            <span key={key++} className="text-[#fbbf24]">
+              {numberMatch[1]}
+            </span>,
+          );
+          remaining = remaining.slice(numberMatch[1].length);
+          matched = true;
+          continue;
+        }
+
+        if (!matched) {
+          result.push(remaining[0]);
+          remaining = remaining.slice(1);
+        }
+      }
+
+      return result;
+    };
+
+    return rawCode.split("\n").map((line, i) => (
+      <div key={i}>
+        {line ? highlightLine(line) : "\u00A0"}
+      </div>
+    ));
   };
 
   return (

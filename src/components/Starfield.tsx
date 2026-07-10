@@ -1,11 +1,11 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 const STAR_COUNT = 6000;
 const NEBULA_COLORS = [
-  new THREE.Color(0x581c87), // purple
-  new THREE.Color(0x06b6d4), // cyan
+  new THREE.Color(0x581c87),
+  new THREE.Color(0x06b6d4),
 ];
 
 function Stars() {
@@ -18,7 +18,6 @@ function Stars() {
     const ts = new Float32Array(STAR_COUNT);
 
     for (let i = 0; i < STAR_COUNT; i++) {
-      // Spherical distribution with depth
       const r = 400 + Math.random() * 600;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
@@ -27,7 +26,6 @@ function Stars() {
       pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       pos[i * 3 + 2] = r * Math.cos(phi);
 
-      // Star colors: mostly white/blue with some warm
       const colorChoice = Math.random();
       let c: THREE.Color;
       if (colorChoice < 0.7) {
@@ -97,7 +95,12 @@ function Stars() {
     });
   }, []);
 
-  // Very slow rotation - almost static
+  useEffect(() => {
+    return () => {
+      shaderMaterial.dispose();
+    };
+  }, [shaderMaterial]);
+
   useFrame((state) => {
     if (pointsRef.current) {
       shaderMaterial.uniforms.uTime.value = state.clock.elapsedTime;
@@ -237,6 +240,12 @@ function Nebula() {
       side: THREE.BackSide,
     });
   }, []);
+
+  useEffect(() => {
+    return () => {
+      shaderMaterial.dispose();
+    };
+  }, [shaderMaterial]);
 
   return (
     <mesh ref={meshRef} material={shaderMaterial}>

@@ -6,6 +6,7 @@ import VoiceCanvasPlanet from "./planets/VoiceCanvasPlanet";
 import AutonomousAgentPlanet from "./planets/AutonomousAgentPlanet";
 import MultiAgentPlanet from "./planets/MultiAgentPlanet";
 import AgenticRagPlanet from "./planets/AgenticRagPlanet";
+import { ORBITS, type OrbitParams } from "./OrbitalContext";
 
 interface SolarSystemProps {
   speed: number;
@@ -25,89 +26,6 @@ interface PlanetConfig {
   startAngle: number;
   size: number;
   stats: { labelKey: string; value: string }[];
-}
-
-// ─── Real Orbital Mechanics ───
-const PLANET_MASS = [0.8, 1.2, 2.5, 1.8];
-
-interface OrbitParams {
-  a: number;
-  e: number;
-  i: number;
-  omega: number;
-  M0: number;
-  period: number;
-}
-
-const ORBITS: OrbitParams[] = [
-  { a: 1.5, e: 0.12, i: 0.05, omega: 0.5, M0: 0, period: 6 },
-  { a: 2.3, e: 0.1, i: -0.04, omega: 2.0, M0: Math.PI / 3, period: 12 },
-  { a: 3.1, e: 0.08, i: 0.03, omega: 3.8, M0: Math.PI * 0.7, period: 20 },
-  { a: 3.9, e: 0.1, i: -0.02, omega: 5.2, M0: Math.PI * 1.3, period: 32 },
-];
-
-function solveKepler(M: number, e: number, maxIter = 10): number {
-  let E = M;
-  for (let i = 0; i < maxIter; i++) {
-    const f = E - e * Math.sin(E) - M;
-    const fp = 1 - e * Math.cos(E);
-    E = E - f / fp;
-  }
-  return E;
-}
-
-function getOrbitalPosition(
-  orbit: OrbitParams,
-  M: number,
-): { x: number; y: number; z: number; speed: number } {
-  const E = solveKepler(M, orbit.e);
-  const cosE = Math.cos(E);
-  const sinE = Math.sin(E);
-  const sqrt1me2 = Math.sqrt(1 - orbit.e * orbit.e);
-
-  const xOrbital = orbit.a * (cosE - orbit.e);
-  const zOrbital = orbit.a * sqrt1me2 * sinE;
-  const speed = Math.sqrt((1 + orbit.e * Math.cos(E)) / (1 - orbit.e * cosE));
-
-  const cosO = Math.cos(orbit.omega);
-  const sinO = Math.sin(orbit.omega);
-  const xRot = xOrbital * cosO - zOrbital * sinO;
-  const zRot = xOrbital * sinO + zOrbital * cosO;
-
-  const cosI = Math.cos(orbit.i);
-  const sinI = Math.sin(orbit.i);
-  const y = xRot * sinI;
-  const x = xRot * cosI;
-  const z = zRot;
-
-  return { x, y, z, speed };
-}
-
-function computePerturbation(
-  positions: { x: number; y: number; z: number }[],
-  myIndex: number,
-  G = 0.008,
-): { ax: number; ay: number; az: number } {
-  let ax = 0,
-    ay = 0,
-    az = 0;
-  const myPos = positions[myIndex];
-
-  for (let i = 0; i < positions.length; i++) {
-    if (i === myIndex) continue;
-    const dx = positions[i].x - myPos.x;
-    const dy = positions[i].y - myPos.y;
-    const dz = positions[i].z - myPos.z;
-    const r2 = dx * dx + dy * dy + dz * dz;
-    const softening = 0.5;
-    const rSoft = Math.sqrt(r2 + softening * softening);
-    const factor = (G * PLANET_MASS[i]) / (rSoft * rSoft * rSoft);
-    ax += factor * dx;
-    ay += factor * dy;
-    az += factor * dz;
-  }
-
-  return { ax, ay, az };
 }
 
 const PLANETS_CONFIG: PlanetConfig[] = [
@@ -188,8 +106,6 @@ const PLANETS_CONFIG: PlanetConfig[] = [
   },
 ];
 
-/* ─── Shaders ─── */
-
 const planetVertexShader = `
   varying vec3 vNormal;
   varying vec3 vPosition;
@@ -235,13 +151,42 @@ const coreVertexShader = `
   }
 `;
 
-/* ─── 3D Components ─── */
+function solveKepler(M: number, e: number, maxIter = 10): number {
+  let E = M;
+  for (let i = 0; i < maxIter; i++) {
+    const f = E - e * Math.sin(E) - M;
+    const fp = 1 - e * Math.cos(E);
+    E = E - f / fp;
+  }
+  return E;
+}
 
-const orbitalState = {
-  meanAnomalies: ORBITS.map((o) => o.M0),
-  perturbations: ORBITS.map(() => ({ x: 0, y: 0, z: 0 })),
-  velocities: ORBITS.map(() => ({ x: 0, y: 0, z: 0 })),
-};
+function getOrbitalPosition(
+  orbit: OrbitParams,
+  M: number,
+): { x: number; y: number; z: number; speed: number } {
+  const E = solveKepler(M, orbit.e);
+  const cosE = Math.cos(E);
+  const sinE = Math.sin(E);
+  const sqrt1me2 = Math.sqrt(1 - orbit.e * orbit.e);
+
+  const xOrbital = orbit.a * (cosE - orbit.e);
+  const zOrbital = orbit.a * sqrt1me2 * sinE;
+  const speed = Math.sqrt((1 + orbit.e * Math.cos(E)) / (1 - orbit.e * cosE));
+
+  const cosO = Math.cos(orbit.omega);
+  const sinO = Math.sin(orbit.omega);
+  const xRot = xOrbital * cosO - zOrbital * sinO;
+  const zRot = xOrbital * sinO + zOrbital * cosO;
+
+  const cosI = Math.cos(orbit.i);
+  const sinI = Math.sin(orbit.i);
+  const y = xRot * sinI;
+  const x = xRot * cosI;
+  const z = zRot;
+
+  return { x, y, z, speed };
+}
 
 function generateOrbitGeometry(orbit: OrbitParams): THREE.BufferGeometry {
   const points: THREE.Vector3[] = [];
@@ -267,6 +212,12 @@ function OrbitLine({
 }) {
   const geometry = useMemo(() => generateOrbitGeometry(orbit), [orbit]);
 
+  useEffect(() => {
+    return () => {
+      geometry.dispose();
+    };
+  }, [geometry]);
+
   const line = useMemo(() => {
     const c = new THREE.Color(color);
     const lineColor = hovered
@@ -280,6 +231,12 @@ function OrbitLine({
     });
     return new THREE.Line(geometry, mat);
   }, [geometry, color, hovered]);
+
+  useEffect(() => {
+    return () => {
+      (line.material as THREE.Material).dispose();
+    };
+  }, [line]);
 
   return <primitive object={line} />;
 }
@@ -318,25 +275,25 @@ function PlanetVisual({
 function Planet({
   config,
   index,
-  speed,
   hoveredPlanetId,
   setHoveredPlanetId,
   onPlanetClick,
+  speed,
 }: {
   config: PlanetConfig;
   index: number;
-  speed: number;
   hoveredPlanetId: number | null;
   setHoveredPlanetId: (id: number | null) => void;
   onPlanetClick: (id: number) => void;
+  speed: number;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
-  const ringRef = useRef<THREE.Group>(null);
   const satellitesRef = useRef<THREE.Group>(null);
 
   const orbit = ORBITS[index];
+  
 
   const baseColor = useMemo(() => {
     const c = new THREE.Color(config.hexColor);
@@ -377,62 +334,26 @@ function Planet({
     });
   }, [glowColor]);
 
-  useFrame((state, delta) => {
+  useEffect(() => {
+    return () => {
+      material.dispose();
+      glowMaterial.dispose();
+    };
+  }, [material, glowMaterial]);
+
+  useFrame((state) => {
     if (!groupRef.current) return;
 
     const isHovered = hoveredPlanetId === config.id;
 
     const meanMotion = (2 * Math.PI) / orbit.period;
-    orbitalState.meanAnomalies[index] += delta * meanMotion * speed;
+    const M = state.clock.elapsedTime * meanMotion * speed;
 
-    const M = orbitalState.meanAnomalies[index];
     const pos = getOrbitalPosition(orbit, M);
 
-    const allPositions = ORBITS.map((o, i) => {
-      const m = orbitalState.meanAnomalies[i];
-      const p = getOrbitalPosition(o, m);
-      return {
-        x: p.x + orbitalState.perturbations[i].x,
-        y: p.y + orbitalState.perturbations[i].y,
-        z: p.z + orbitalState.perturbations[i].z,
-      };
-    });
-
-    const pert = computePerturbation(allPositions, index);
-
-    orbitalState.velocities[index].x += pert.ax * delta;
-    orbitalState.velocities[index].y += pert.ay * delta;
-    orbitalState.velocities[index].z += pert.az * delta;
-
-    const damping = 0.98;
-    orbitalState.velocities[index].x *= damping;
-    orbitalState.velocities[index].y *= damping;
-    orbitalState.velocities[index].z *= damping;
-
-    orbitalState.perturbations[index].x +=
-      orbitalState.velocities[index].x * delta;
-    orbitalState.perturbations[index].y +=
-      orbitalState.velocities[index].y * delta;
-    orbitalState.perturbations[index].z +=
-      orbitalState.velocities[index].z * delta;
-
-    const maxPert = 0.3;
-    orbitalState.perturbations[index].x = Math.max(
-      -maxPert,
-      Math.min(maxPert, orbitalState.perturbations[index].x),
-    );
-    orbitalState.perturbations[index].y = Math.max(
-      -maxPert,
-      Math.min(maxPert, orbitalState.perturbations[index].y),
-    );
-    orbitalState.perturbations[index].z = Math.max(
-      -maxPert,
-      Math.min(maxPert, orbitalState.perturbations[index].z),
-    );
-
-    const finalX = pos.x + orbitalState.perturbations[index].x;
-    const finalY = pos.y + orbitalState.perturbations[index].y;
-    const finalZ = pos.z + orbitalState.perturbations[index].z;
+    const finalX = pos.x;
+    const finalY = pos.y;
+    const finalZ = pos.z;
 
     const distanceFromCenter = Math.sqrt(
       finalX * finalX + finalY * finalY + finalZ * finalZ,
@@ -454,10 +375,6 @@ function Planet({
       glowRef.current.scale.setScalar(pulse);
     }
 
-    if (ringRef.current) {
-      ringRef.current.rotation.z = state.clock.elapsedTime * 0.08;
-    }
-
     if (satellitesRef.current) {
       const orbitSpeed = config.id === 3 ? 0.2 : 0.35;
       satellitesRef.current.rotation.y = state.clock.elapsedTime * orbitSpeed;
@@ -466,7 +383,6 @@ function Planet({
 
   return (
     <group ref={groupRef}>
-      {/* Planet sphere */}
       <mesh
         ref={meshRef}
         material={material}
@@ -477,12 +393,10 @@ function Planet({
         <sphereGeometry args={[config.size, 32, 32]} />
       </mesh>
 
-      {/* Atmosphere glow */}
       <mesh ref={glowRef} material={glowMaterial}>
         <sphereGeometry args={[config.size * 1.3, 16, 16]} />
       </mesh>
 
-      {/* Planet-specific visual features */}
       <PlanetVisual
         id={config.id}
         size={config.size}
@@ -647,6 +561,15 @@ function Core({ onHover }: { onHover: (hovered: boolean) => void }) {
     return geo;
   }, []);
 
+  useEffect(() => {
+    return () => {
+      material.dispose();
+      glowMat.dispose();
+      outerGlowMat.dispose();
+      particleGeometry.dispose();
+    };
+  }, [material, glowMat, outerGlowMat, particleGeometry]);
+
   useFrame((state) => {
     const time = state.clock.elapsedTime;
 
@@ -751,17 +674,15 @@ function Scene({
           key={planet.id}
           config={planet}
           index={index}
-          speed={speed}
           hoveredPlanetId={hoveredPlanetId}
           setHoveredPlanetId={setHoveredPlanetId}
           onPlanetClick={onPlanetClick}
+          speed={speed}
         />
       ))}
     </group>
   );
 }
-
-/* ─── DOM HUD Overlay ─── */
 
 function PlanetLabel({
   config,
@@ -771,59 +692,38 @@ function PlanetLabel({
   config: PlanetConfig;
   index: number;
   speed: number;
-  hoveredPlanetId?: number | null;
 }) {
   const { t } = useTranslation();
+  const orbit = ORBITS[index];
   const [screenPos, setScreenPos] = useState<{
     x: number;
     y: number;
     visible: boolean;
-  }>({
-    x: 0,
-    y: 0,
-    visible: false,
+  }>({ x: 0, y: 0, visible: false });
+
+  useFrame((state) => {
+    const time = state.clock.elapsedTime;
+    const meanMotion = (2 * Math.PI) / orbit.period;
+    const M = time * meanMotion * speed;
+
+    const pos = getOrbitalPosition(orbit, M);
+    const finalX = pos.x;
+    const finalY = pos.y;
+    const finalZ = pos.z;
+
+    const distance = 14;
+    const tilt = Math.PI / 5;
+    const projectedY = finalY / (distance - finalZ * Math.cos(tilt));
+    const projectedX = finalX / (distance - finalZ * Math.cos(tilt));
+
+    const screenX = 50 + projectedX * 25;
+    const screenY = 50 - projectedY * 25;
+
+    const depth = Math.sin(M);
+    const visible = depth > -0.3;
+
+    setScreenPos({ x: screenX, y: screenY, visible });
   });
-
-  const orbit = ORBITS[index];
-  const lastTimeRef = useRef<number>(0);
-
-  useEffect(() => {
-    let frameId: number;
-
-    const update = (time: number) => {
-      const delta = lastTimeRef.current
-        ? (time - lastTimeRef.current) / 1000
-        : 0.016;
-      lastTimeRef.current = time;
-
-      const meanMotion = (2 * Math.PI) / orbit.period;
-      orbitalState.meanAnomalies[index] += delta * meanMotion * speed;
-
-      const M = orbitalState.meanAnomalies[index];
-      const pos = getOrbitalPosition(orbit, M);
-
-      const finalX = pos.x + orbitalState.perturbations[index].x;
-      const finalY = pos.y + orbitalState.perturbations[index].y;
-      const finalZ = pos.z + orbitalState.perturbations[index].z;
-
-      const distance = 14;
-      const tilt = Math.PI / 5;
-      const projectedY = finalY / (distance - finalZ * Math.cos(tilt));
-      const projectedX = finalX / (distance - finalZ * Math.cos(tilt));
-
-      const screenX = 50 + projectedX * 25;
-      const screenY = 50 - projectedY * 25;
-
-      const depth = Math.sin(M);
-      const visible = depth > -0.3;
-
-      setScreenPos({ x: screenX, y: screenY, visible });
-      frameId = requestAnimationFrame(update);
-    };
-
-    frameId = requestAnimationFrame(update);
-    return () => cancelAnimationFrame(frameId);
-  }, [config, index, speed, orbit]);
 
   if (!screenPos.visible) return null;
 
@@ -843,8 +743,6 @@ function PlanetLabel({
     </div>
   );
 }
-
-/* ─── Core Info Panel ─── */
 
 function CoreInfoPanel({ visible }: { visible: boolean }) {
   const { t } = useTranslation();
@@ -905,8 +803,6 @@ function CoreInfoPanel({ visible }: { visible: boolean }) {
   );
 }
 
-/* ─── Main Component ─── */
-
 export default function SolarSystem({
   speed,
   onPlanetClick,
@@ -954,7 +850,6 @@ export default function SolarSystem({
             config={planet}
             index={index}
             speed={speed}
-            hoveredPlanetId={hoveredPlanetId}
           />
         ))}
       </div>
