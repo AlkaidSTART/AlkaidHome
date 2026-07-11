@@ -19,7 +19,7 @@ function Scene({ speed }: { speed: number }) {
   const setCoreHovered = useAppStore((state) => state.setCoreHovered);
 
   useEffect(() => {
-    camera.position.set(0, 2.5, 16);
+    camera.position.set(0, 3.5, 20);
     camera.lookAt(0, 0, 0);
   }, [camera]);
 
@@ -59,7 +59,7 @@ export default function SolarSystem({ speed }: SolarSystemProps) {
     <div className="w-full relative z-[5]">
       <div className="w-full" style={{ height: "120vh" }}>
         <Canvas
-          camera={{ fov: 50, near: 0.1, far: 2000 }}
+        camera={{ fov: 60, near: 0.1, far: 2000 }}
           gl={{
             antialias: true,
             alpha: false,

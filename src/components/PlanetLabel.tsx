@@ -25,13 +25,13 @@ export default function PlanetLabel({
       const elapsedTime = performance.now() / 1000;
       const pos = calculateOrbitalPosition(orbit, speed, elapsedTime);
 
-      const distance = 16;
+      const distance = 20;
       const tilt = Math.PI / 5;
       const projectedY = pos.y / (distance - pos.z * Math.cos(tilt));
       const projectedX = pos.x / (distance - pos.z * Math.cos(tilt));
 
-      const screenX = 50 + projectedX * 18;
-      const screenY = 50 - projectedY * 18;
+      const screenX = 50 + projectedX * 15;
+      const screenY = 50 - projectedY * 15;
 
       const depth = Math.sin(pos.M);
       const visible = depth > -0.3;
