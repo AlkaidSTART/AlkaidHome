@@ -1,4 +1,4 @@
-import type { OrbitParams } from "./types";
+import type { OrbitParams } from "@planets/types";
 
 export interface PlanetConfig {
   id: number;

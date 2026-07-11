@@ -2,11 +2,11 @@ import React, { useEffect, useRef } from "react";
 import { X, BarChart3, Code2 } from "lucide-react";
 import { gsap } from "gsap";
 import { useTranslation } from "react-i18next";
-import VoiceCanvasPanel from "./panels/voice-canvas-panel";
-import AutonomousAgentPanel from "./panels/autonomous-agent-panel";
-import MultiAgentPanel from "./panels/multi-agent-panel";
-import AgenticRagPanel from "./panels/agentic-rag-panel";
- import { PROJECTS_DATA, getPipelineSteps, highlightCode } from "./data";
+import VoiceCanvasPanel from "@components/project-details/panels/voice-canvas-panel";
+import AutonomousAgentPanel from "@components/project-details/panels/autonomous-agent-panel";
+import MultiAgentPanel from "@components/project-details/panels/multi-agent-panel";
+import AgenticRagPanel from "@components/project-details/panels/agentic-rag-panel";
+import { PROJECTS_DATA, getPipelineSteps, highlightCode } from "@components/project-details/data";
 
 interface ProjectDetailsProps {
   planetId: number | null;

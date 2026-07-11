@@ -15,17 +15,16 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Path aliases */
-    "baseUrl": ".",
+    /* Path aliases - TypeScript 7.0 format */
     "paths": {
-      "@/*": ["src/*"],
-      "@components/*": ["src/components/*"],
-      "@hooks/*": ["src/components/hooks/*"],
-      "@planets/*": ["src/components/planets/*"],
-      "@shaders/*": ["src/shaders/*"],
-      "@lib/*": ["src/lib/*"],
-      "@store": ["src/store/index.ts"],
-      "@i18n": ["src/i18n/index.ts"]
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@hooks/*": ["./src/components/hooks/*"],
+      "@planets/*": ["./src/components/planets/*"],
+      "@shaders/*": ["./src/shaders/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@store": ["./src/store/index.ts"],
+      "@i18n": ["./src/i18n/index.ts"]
     },
 
     /* Linting */

@@ -1,4 +1,4 @@
-export { highlightCode } from "../../lib/codeHighlight";
+export { highlightCode } from "@lib/codeHighlight";
 
 export interface ProjectData {
   id: number;
