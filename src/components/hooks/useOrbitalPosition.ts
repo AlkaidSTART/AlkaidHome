@@ -1,5 +1,4 @@
-import { useFrame } from "@react-three/fiber";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getOrbitalPosition } from "@lib/orbital";
 import type { OrbitParams } from "@planets/types";
 
@@ -20,18 +19,33 @@ export function useOrbitalPosition(orbit: OrbitParams, speed: number): OrbitalPo
     M: 0,
   });
 
-  useFrame((state) => {
+  const animationRef = useRef<number | null>(null);
+
+  useEffect(() => {
     const meanMotion = (2 * Math.PI) / orbit.period;
-    const M = state.clock.elapsedTime * meanMotion * speed;
-    const position = getOrbitalPosition(orbit, M);
-    setPos({
-      x: position.x,
-      y: position.y,
-      z: position.z,
-      speed: position.speed,
-      M,
-    });
-  });
+
+    const animate = () => {
+      const elapsedTime = performance.now() / 1000;
+      const M = elapsedTime * meanMotion * speed;
+      const position = getOrbitalPosition(orbit, M);
+      setPos({
+        x: position.x,
+        y: position.y,
+        z: position.z,
+        speed: position.speed,
+        M,
+      });
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [orbit, speed]);
 
   return pos;
 }

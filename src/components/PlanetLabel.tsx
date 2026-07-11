@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { PlanetConfig } from "@planets/config";
 import { useOrbitalPosition } from "@hooks/useOrbitalPosition";
@@ -20,20 +19,33 @@ export default function PlanetLabel({
     visible: boolean;
   }>({ x: 0, y: 0, visible: false });
 
-  useFrame(() => {
-    const distance = 14;
-    const tilt = Math.PI / 5;
-    const projectedY = pos.y / (distance - pos.z * Math.cos(tilt));
-    const projectedX = pos.x / (distance - pos.z * Math.cos(tilt));
+  const animationRef = useRef<number | null>(null);
 
-    const screenX = 50 + projectedX * 25;
-    const screenY = 50 - projectedY * 25;
+  useEffect(() => {
+    const updateScreenPos = () => {
+      const distance = 14;
+      const tilt = Math.PI / 5;
+      const projectedY = pos.y / (distance - pos.z * Math.cos(tilt));
+      const projectedX = pos.x / (distance - pos.z * Math.cos(tilt));
 
-    const depth = Math.sin(pos.M);
-    const visible = depth > -0.3;
+      const screenX = 50 + projectedX * 25;
+      const screenY = 50 - projectedY * 25;
 
-    setScreenPos({ x: screenX, y: screenY, visible });
-  });
+      const depth = Math.sin(pos.M);
+      const visible = depth > -0.3;
+
+      setScreenPos({ x: screenX, y: screenY, visible });
+      animationRef.current = requestAnimationFrame(updateScreenPos);
+    };
+
+    animationRef.current = requestAnimationFrame(updateScreenPos);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [pos]);
 
   if (!screenPos.visible) return null;
 
