@@ -19,7 +19,7 @@ function Scene({ speed }: { speed: number }) {
   const setCoreHovered = useAppStore((state) => state.setCoreHovered);
 
   useEffect(() => {
-    camera.position.set(0, 1.2, 12);
+    camera.position.set(0, 2.5, 16);
     camera.lookAt(0, 0, 0);
   }, [camera]);
 
