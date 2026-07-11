@@ -32,3 +32,16 @@ export function getPlanetFragmentShader(baseColor: string, glowColor: string) {
     }
   `;
 }
+
+export function getPlanetGlowFragmentShader(glowColor: string) {
+  return `
+    varying vec3 vNormal;
+    varying vec3 vPosition;
+    void main() {
+      vec3 viewDir = normalize(-vPosition);
+      float fresnel = pow(1.0 - dot(vNormal, viewDir), 2.0);
+      vec3 color = vec3(${glowColor}) * fresnel * 0.3;
+      gl_FragColor = vec4(color, fresnel * 0.25);
+    }
+  `;
+}

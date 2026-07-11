@@ -1,3 +1,5 @@
+import type { OrbitParams } from "./types";
+
 export interface PlanetConfig {
   id: number;
   nameKey: string;
@@ -11,6 +13,7 @@ export interface PlanetConfig {
   startAngle: number;
   size: number;
   stats: { labelKey: string; value: string }[];
+  orbit: OrbitParams;
 }
 
 export const PLANETS_CONFIG: PlanetConfig[] = [
@@ -31,6 +34,7 @@ export const PLANETS_CONFIG: PlanetConfig[] = [
       { labelKey: "planets.voiceCanvas.stats.codec", value: "Opus 48kbps" },
       { labelKey: "planets.voiceCanvas.stats.mosScore", value: "4.65" },
     ],
+    orbit: { a: 1.5, e: 0.12, i: 0.05, omega: 0.5, M0: 0, period: 6 },
   },
   {
     id: 2,
@@ -52,6 +56,7 @@ export const PLANETS_CONFIG: PlanetConfig[] = [
       },
       { labelKey: "planets.autonomousAgent.stats.runs", value: "48k / day" },
     ],
+    orbit: { a: 2.3, e: 0.1, i: -0.04, omega: 2.0, M0: Math.PI / 3, period: 12 },
   },
   {
     id: 3,
@@ -70,6 +75,7 @@ export const PLANETS_CONFIG: PlanetConfig[] = [
       { labelKey: "planets.multiAgent.stats.consensus", value: "98.5%" },
       { labelKey: "planets.multiAgent.stats.iterations", value: "4.2 cycles" },
     ],
+    orbit: { a: 3.1, e: 0.08, i: 0.03, omega: 3.8, M0: Math.PI * 0.7, period: 20 },
   },
   {
     id: 4,
@@ -88,5 +94,6 @@ export const PLANETS_CONFIG: PlanetConfig[] = [
       { labelKey: "planets.agenticRag.stats.searchLatency", value: "14ms" },
       { labelKey: "planets.agenticRag.stats.cacheHit", value: "88%" },
     ],
+    orbit: { a: 3.9, e: 0.1, i: -0.02, omega: 5.2, M0: Math.PI * 1.3, period: 32 },
   },
 ];

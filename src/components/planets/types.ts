@@ -10,4 +10,13 @@ export interface PlanetVisualProps {
   satellitesRef: React.RefObject<THREE.Group | null>;
 }
 
+export interface OrbitParams {
+  a: number;
+  e: number;
+  i: number;
+  omega: number;
+  M0: number;
+  period: number;
+}
+
 export type { PlanetConfig };

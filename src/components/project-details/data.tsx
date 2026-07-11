@@ -1,4 +1,4 @@
-import React from "react";
+export { highlightCode } from "../../lib/codeHighlight";
 
 export interface ProjectData {
   id: number;
@@ -199,72 +199,4 @@ const PIPELINE_STEPS: Record<number, PipelineStep[]> = {
 
 export function getPipelineSteps(planetId: number): PipelineStep[] {
   return PIPELINE_STEPS[planetId] ?? [];
-}
-
-export function highlightCode(code: string): React.ReactNode {
-  const keywords = [
-    /\b(import|from|export|async|await|function|const|let|var|return|if|else|while|for|of|new|class|true|false|null|undefined)\b/g,
-    /\/\/.*$/gm,
-    /(["'`])(?:(?!\1|\\).|\\.)*?\1/g,
-    /\b(\d+)\b/g,
-  ];
-
-  const styles: Array<{ regex: RegExp; className: string }> = [
-    { regex: /\/\/.*$/gm, className: "text-[#6b7280] italic" },
-    { regex: /(["'`])(?:(?!\1|\\).|\\.)*?\1/g, className: "text-[#fbbf24]" },
-    { regex: /\b(import|from|export|async|await|function|const|let|var|return|if|else|while|for|of|new|class|true|false|null|undefined)\b/g, className: "text-[#818cf8]" },
-    { regex: /\b(\d+)\b/g, className: "text-[#f472b6]" },
-    { regex: /(\/\/.*$)/gm, className: "text-[#6b7280]" },
-  ];
-
-  const lines = code.split("\n");
-  return lines.map((line, lineIdx) => {
-    const parts: React.ReactNode[] = [];
-    let remaining = line;
-
-    const matchedSpans: Array<{ start: number; end: number; className: string }> = [];
-    for (const style of styles) {
-      let match: RegExpExecArray | null;
-      const regex = new RegExp(style.regex.source, "g");
-      while ((match = regex.exec(line)) !== null) {
-        matchedSpans.push({
-          start: match.index,
-          end: match.index + match[0].length,
-          className: style.className,
-        });
-      }
-    }
-
-    matchedSpans.sort((a, b) => a.start - b.start);
-
-    let lastIndex = 0;
-    for (const span of matchedSpans) {
-      if (span.start < lastIndex) continue;
-      if (span.start > lastIndex) {
-        parts.push(
-          <span key={`${lineIdx}-${lastIndex}`}>{line.slice(lastIndex, span.start)}</span>,
-        );
-      }
-      parts.push(
-        <span key={`${lineIdx}-${span.start}`} className={span.className}>
-          {line.slice(span.start, span.end)}
-        </span>,
-      );
-      lastIndex = span.end;
-    }
-    if (lastIndex < line.length) {
-      parts.push(
-        <span key={`${lineIdx}-${lastIndex}`}>{line.slice(lastIndex)}</span>,
-      );
-    }
-
-    return (
-      <div key={lineIdx} className="flex">
-        <span className="text-[#4b5563] w-8 text-right select-none mr-4 flex-shrink-0">
-          {lineIdx + 1}
-        </span>
-        <span>{parts.length > 0 ? parts : line || " "}</span>
-      </div>
-    );
-  });
 }

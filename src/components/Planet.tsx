@@ -1,14 +1,14 @@
- import { useRef, useMemo, useEffect } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
- import { planetVertexShader, getPlanetFragmentShader } from "../shaders/planet";
-import { ORBITS, getOrbitalPosition } from "../lib/orbital";
-import type { PlanetConfig } from "./planets/config";
-import { useAppStore } from "../store";
-import VoiceCanvasPlanet from "./planets/VoiceCanvasPlanet";
-import AutonomousAgentPlanet from "./planets/AutonomousAgentPlanet";
-import MultiAgentPlanet from "./planets/MultiAgentPlanet";
-import AgenticRagPlanet from "./planets/AgenticRagPlanet";
+import { planetVertexShader, getPlanetFragmentShader, getPlanetGlowFragmentShader } from "@shaders/planet";
+import type { PlanetConfig } from "@planets/config";
+import { useAppStore } from "@store";
+import { useOrbitalPosition } from "@hooks/useOrbitalPosition";
+import VoiceCanvasPlanet from "@planets/VoiceCanvasPlanet";
+import AutonomousAgentPlanet from "@planets/AutonomousAgentPlanet";
+import MultiAgentPlanet from "@planets/MultiAgentPlanet";
+import AgenticRagPlanet from "@planets/AgenticRagPlanet";
 
 function PlanetVisual({
   id,
@@ -39,11 +39,9 @@ function PlanetVisual({
 
 export default function Planet({
   config,
-  index,
   speed,
 }: {
   config: PlanetConfig;
-  index: number;
   speed: number;
 }) {
   const groupRef = useRef<THREE.Group>(null);
@@ -55,7 +53,8 @@ export default function Planet({
   const setHoveredPlanetId = useAppStore((state) => state.setHoveredPlanetId);
   const setActivePlanetId = useAppStore((state) => state.setActivePlanetId);
 
-  const orbit = ORBITS[index];
+  const orbit = config.orbit;
+  const pos = useOrbitalPosition(orbit, speed);
 
   const baseColor = useMemo(() => {
     const c = new THREE.Color(config.hexColor);
@@ -79,16 +78,7 @@ export default function Planet({
     return new THREE.ShaderMaterial({
       uniforms: { uTime: { value: 0 } },
       vertexShader: planetVertexShader,
-      fragmentShader: `
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        void main() {
-          vec3 viewDir = normalize(-vPosition);
-          float fresnel = pow(1.0 - dot(vNormal, viewDir), 2.0);
-          vec3 color = vec3(${glowColor}) * fresnel * 0.3;
-          gl_FragColor = vec4(color, fresnel * 0.25);
-        }
-      `,
+      fragmentShader: getPlanetGlowFragmentShader(glowColor),
       transparent: true,
       side: THREE.BackSide,
       blending: THREE.AdditiveBlending,
@@ -108,23 +98,14 @@ export default function Planet({
 
     const isHovered = hoveredPlanetId === config.id;
 
-    const meanMotion = (2 * Math.PI) / orbit.period;
-    const M = state.clock.elapsedTime * meanMotion * speed;
-
-    const pos = getOrbitalPosition(orbit, M);
-
-    const finalX = pos.x;
-    const finalY = pos.y;
-    const finalZ = pos.z;
-
     const distanceFromCenter = Math.sqrt(
-      finalX * finalX + finalY * finalY + finalZ * finalZ,
+      pos.x * pos.x + pos.y * pos.y + pos.z * pos.z,
     );
     const avgDist = orbit.a;
     const depth = (avgDist - distanceFromCenter) / (orbit.a * orbit.e || 1);
     const scale = 0.9 + (depth + 1) * 0.08;
 
-    groupRef.current.position.set(finalX, finalY, finalZ);
+    groupRef.current.position.set(pos.x, pos.y, pos.z);
     groupRef.current.scale.setScalar(scale * (isHovered ? 1.1 : 1.0));
 
     if (meshRef.current) {

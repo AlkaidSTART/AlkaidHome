@@ -1,13 +1,12 @@
 import { useEffect } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import OrbitLine from "./OrbitLine";
-import Core from "./Core";
-import Planet from "./Planet";
-import PlanetLabel from "./PlanetLabel";
-import CoreInfoPanel from "./CoreInfoPanel";
-import { PLANETS_CONFIG } from "./planets/config";
-import { ORBITS } from "../lib/orbital";
-import { useAppStore } from "../store";
+import OrbitLine from "@components/OrbitLine";
+import Core from "@components/Core";
+import Planet from "@components/Planet";
+import PlanetLabel from "@components/PlanetLabel";
+import CoreInfoPanel from "@components/CoreInfoPanel";
+import { PLANETS_CONFIG } from "@planets/config";
+import { useAppStore } from "@store";
 
 interface SolarSystemProps {
   speed: number;
@@ -27,20 +26,19 @@ function Scene({ speed }: { speed: number }) {
     <group rotation={[Math.PI / 5, 0, 0]}>
       <Core onHover={setCoreHovered} />
 
-      {PLANETS_CONFIG.map((planet, index) => (
+      {PLANETS_CONFIG.map((planet) => (
         <OrbitLine
           key={`orbit-${planet.id}`}
-          orbit={ORBITS[index]}
+          orbit={planet.orbit}
           color={planet.hexColor}
           hovered={hoveredPlanetId === planet.id}
         />
       ))}
 
-      {PLANETS_CONFIG.map((planet, index) => (
+      {PLANETS_CONFIG.map((planet) => (
         <Planet
           key={planet.id}
           config={planet}
-          index={index}
           speed={speed}
         />
       ))}
@@ -79,11 +77,10 @@ export default function SolarSystem({ speed }: SolarSystemProps) {
       <CoreInfoPanel visible={coreHovered} />
 
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-        {PLANETS_CONFIG.map((planet, index) => (
+        {PLANETS_CONFIG.map((planet) => (
           <PlanetLabel
             key={`label-${planet.id}`}
             config={planet}
-            index={index}
             speed={speed}
           />
         ))}

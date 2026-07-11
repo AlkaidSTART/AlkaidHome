@@ -1,45 +1,35 @@
 import { useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useTranslation } from "react-i18next";
-import { ORBITS, getOrbitalPosition } from "../lib/orbital";
-import type { PlanetConfig } from "./planets/config";
+import type { PlanetConfig } from "@planets/config";
+import { useOrbitalPosition } from "@hooks/useOrbitalPosition";
 
 export default function PlanetLabel({
   config,
-  index,
   speed,
 }: {
   config: PlanetConfig;
-  index: number;
   speed: number;
 }) {
   const { t } = useTranslation();
-  const orbit = ORBITS[index];
+  const orbit = config.orbit;
+  const pos = useOrbitalPosition(orbit, speed);
   const [screenPos, setScreenPos] = useState<{
     x: number;
     y: number;
     visible: boolean;
   }>({ x: 0, y: 0, visible: false });
 
-  useFrame((state) => {
-    const time = state.clock.elapsedTime;
-    const meanMotion = (2 * Math.PI) / orbit.period;
-    const M = time * meanMotion * speed;
-
-    const pos = getOrbitalPosition(orbit, M);
-    const finalX = pos.x;
-    const finalY = pos.y;
-    const finalZ = pos.z;
-
+  useFrame(() => {
     const distance = 14;
     const tilt = Math.PI / 5;
-    const projectedY = finalY / (distance - finalZ * Math.cos(tilt));
-    const projectedX = finalX / (distance - finalZ * Math.cos(tilt));
+    const projectedY = pos.y / (distance - pos.z * Math.cos(tilt));
+    const projectedX = pos.x / (distance - pos.z * Math.cos(tilt));
 
     const screenX = 50 + projectedX * 25;
     const screenY = 50 - projectedY * 25;
 
-    const depth = Math.sin(M);
+    const depth = Math.sin(pos.M);
     const visible = depth > -0.3;
 
     setScreenPos({ x: screenX, y: screenY, visible });

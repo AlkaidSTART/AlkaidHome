@@ -58,10 +58,3 @@ export function generateOrbitGeometry(orbit: OrbitParams): THREE.BufferGeometry 
 
   return new THREE.BufferGeometry().setFromPoints(points);
 }
-
-export const ORBITS: OrbitParams[] = [
-  { a: 1.5, e: 0.12, i: 0.05, omega: 0.5, M0: 0, period: 6 },
-  { a: 2.3, e: 0.1, i: -0.04, omega: 2.0, M0: Math.PI / 3, period: 12 },
-  { a: 3.1, e: 0.08, i: 0.03, omega: 3.8, M0: Math.PI * 0.7, period: 20 },
-  { a: 3.9, e: 0.1, i: -0.02, omega: 5.2, M0: Math.PI * 1.3, period: 32 },
-];

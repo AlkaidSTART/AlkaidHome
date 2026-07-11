@@ -1,7 +1,7 @@
 import { useMemo, useEffect } from "react";
 import * as THREE from "three";
-import type { OrbitParams } from "../lib/orbital";
-import { generateOrbitGeometry } from "../lib/orbital";
+import type { OrbitParams } from "@planets/types";
+import { generateOrbitGeometry } from "@lib/orbital";
 
 export default function OrbitLine({
   orbit,

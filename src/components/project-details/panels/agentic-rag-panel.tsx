@@ -17,7 +17,6 @@ export default function AgenticRagPanel({ projectColor }: Props) {
     e.preventDefault();
     if (!ragQuery.trim()) return;
 
-    const query = ragQuery.toLowerCase();
     const mockResults = [
       {
         title: "episodic_memory_graph.db L45",

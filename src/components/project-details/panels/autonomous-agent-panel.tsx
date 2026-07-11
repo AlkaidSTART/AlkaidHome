@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Terminal as TerminalIcon, Play, RotateCcw } from "lucide-react";
+import { Play, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 interface Props {
