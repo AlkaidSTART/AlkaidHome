@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { planetVertexShader, getPlanetFragmentShader, getPlanetGlowFragmentShader } from "@shaders/planet";
 import type { PlanetConfig } from "@planets/config";
 import { useAppStore } from "@store";
-import { useOrbitalPosition } from "@hooks/useOrbitalPosition";
+import { calculateOrbitalPosition } from "@hooks/useOrbitalPosition";
 import VoiceCanvasPlanet from "@planets/VoiceCanvasPlanet";
 import AutonomousAgentPlanet from "@planets/AutonomousAgentPlanet";
 import MultiAgentPlanet from "@planets/MultiAgentPlanet";
@@ -54,7 +54,6 @@ export default function Planet({
   const setActivePlanetId = useAppStore((state) => state.setActivePlanetId);
 
   const orbit = config.orbit;
-  const pos = useOrbitalPosition(orbit, speed);
 
   const baseColor = useMemo(() => {
     const c = new THREE.Color(config.hexColor);
@@ -96,6 +95,7 @@ export default function Planet({
   useFrame((state) => {
     if (!groupRef.current) return;
 
+    const pos = calculateOrbitalPosition(orbit, speed, state.clock.elapsedTime);
     const isHovered = hoveredPlanetId === config.id;
 
     const distanceFromCenter = Math.sqrt(

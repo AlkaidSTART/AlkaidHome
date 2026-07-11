@@ -5,6 +5,7 @@ import Core from "@components/Core";
 import Planet from "@components/Planet";
 import PlanetLabel from "@components/PlanetLabel";
 import CoreInfoPanel from "@components/CoreInfoPanel";
+import StarfieldScene from "@components/Starfield";
 import { PLANETS_CONFIG } from "@planets/config";
 import { useAppStore } from "@store";
 
@@ -23,26 +24,31 @@ function Scene({ speed }: { speed: number }) {
   }, [camera]);
 
   return (
-    <group rotation={[Math.PI / 5, 0, 0]}>
-      <Core onHover={setCoreHovered} />
+    <>
+      <color attach="background" args={["#000000"]} />
+      <fog attach="fog" args={["#000000", 500, 1500]} />
+      <StarfieldScene />
+      <group rotation={[Math.PI / 5, 0, 0]}>
+        <Core onHover={setCoreHovered} />
 
-      {PLANETS_CONFIG.map((planet) => (
-        <OrbitLine
-          key={`orbit-${planet.id}`}
-          orbit={planet.orbit}
-          color={planet.hexColor}
-          hovered={hoveredPlanetId === planet.id}
-        />
-      ))}
+        {PLANETS_CONFIG.map((planet) => (
+          <OrbitLine
+            key={`orbit-${planet.id}`}
+            orbit={planet.orbit}
+            color={planet.hexColor}
+            hovered={hoveredPlanetId === planet.id}
+          />
+        ))}
 
-      {PLANETS_CONFIG.map((planet) => (
-        <Planet
-          key={planet.id}
-          config={planet}
-          speed={speed}
-        />
-      ))}
-    </group>
+        {PLANETS_CONFIG.map((planet) => (
+          <Planet
+            key={planet.id}
+            config={planet}
+            speed={speed}
+          />
+        ))}
+      </group>
+    </>
   );
 }
 
@@ -53,14 +59,14 @@ export default function SolarSystem({ speed }: SolarSystemProps) {
     <div className="w-full relative z-[5]">
       <div className="w-full" style={{ height: "120vh" }}>
         <Canvas
-          camera={{ fov: 50, near: 0.1, far: 100 }}
+          camera={{ fov: 50, near: 0.1, far: 2000 }}
           gl={{
             antialias: true,
-            alpha: true,
+            alpha: false,
             powerPreference: "high-performance",
           }}
           style={{
-            background: "transparent",
+            background: "#000000",
             position: "fixed",
             top: 0,
             left: 0,

@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import { Orbit } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import Starfield from "@components/Starfield";
 import SolarSystem from "@components/SolarSystem";
 import ConsolePanel from "@components/ConsolePanel";
 import ProjectDetails from "@components/project-details";
@@ -44,8 +43,6 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <Starfield />
-
       <div className="hud-grid"></div>
       <div className="hud-scanline"></div>
 

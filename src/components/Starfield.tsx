@@ -1,8 +1,8 @@
 import { useRef, useMemo, useEffect } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-const STAR_COUNT = 6000;
+const STAR_COUNT = 3000;
 const NEBULA_COLORS = [
   new THREE.Color(0x581c87),
   new THREE.Color(0x06b6d4),
@@ -254,24 +254,12 @@ function Nebula() {
   );
 }
 
-export default function Starfield() {
+export default function StarfieldScene() {
   return (
-    <div className="fixed inset-0 z-0">
-      <Canvas
-        camera={{ position: [0, 0, 300], fov: 60, near: 0.1, far: 2000 }}
-        gl={{
-          antialias: true,
-          alpha: false,
-          powerPreference: "high-performance",
-        }}
-        style={{ background: "#000000" }}
-      >
-        <color attach="background" args={["#000000"]} />
-        <fog attach="fog" args={["#000000", 500, 1500]} />
-        <Nebula />
-        <Stars />
-        <ShootingStar />
-      </Canvas>
-    </div>
+    <group>
+      <Nebula />
+      <Stars />
+      <ShootingStar />
+    </group>
   );
 }

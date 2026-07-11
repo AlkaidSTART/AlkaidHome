@@ -10,6 +10,23 @@ export interface OrbitalPosition {
   M: number;
 }
 
+export function calculateOrbitalPosition(
+  orbit: OrbitParams,
+  speed: number,
+  elapsedTime: number,
+): OrbitalPosition {
+  const meanMotion = (2 * Math.PI) / orbit.period;
+  const M = elapsedTime * meanMotion * speed;
+  const position = getOrbitalPosition(orbit, M);
+  return {
+    x: position.x,
+    y: position.y,
+    z: position.z,
+    speed: position.speed,
+    M,
+  };
+}
+
 export function useOrbitalPosition(orbit: OrbitParams, speed: number): OrbitalPosition {
   const [pos, setPos] = useState<OrbitalPosition>({
     x: 0,
@@ -22,10 +39,9 @@ export function useOrbitalPosition(orbit: OrbitParams, speed: number): OrbitalPo
   const animationRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const meanMotion = (2 * Math.PI) / orbit.period;
-
     const animate = () => {
       const elapsedTime = performance.now() / 1000;
+      const meanMotion = (2 * Math.PI) / orbit.period;
       const M = elapsedTime * meanMotion * speed;
       const position = getOrbitalPosition(orbit, M);
       setPos({

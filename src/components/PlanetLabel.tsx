@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { PlanetConfig } from "@planets/config";
-import { useOrbitalPosition } from "@hooks/useOrbitalPosition";
+import { calculateOrbitalPosition } from "@hooks/useOrbitalPosition";
 
 export default function PlanetLabel({
   config,
@@ -12,7 +12,6 @@ export default function PlanetLabel({
 }) {
   const { t } = useTranslation();
   const orbit = config.orbit;
-  const pos = useOrbitalPosition(orbit, speed);
   const [screenPos, setScreenPos] = useState<{
     x: number;
     y: number;
@@ -23,6 +22,9 @@ export default function PlanetLabel({
 
   useEffect(() => {
     const updateScreenPos = () => {
+      const elapsedTime = performance.now() / 1000;
+      const pos = calculateOrbitalPosition(orbit, speed, elapsedTime);
+
       const distance = 14;
       const tilt = Math.PI / 5;
       const projectedY = pos.y / (distance - pos.z * Math.cos(tilt));
@@ -45,7 +47,7 @@ export default function PlanetLabel({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [pos]);
+  }, [orbit, speed]);
 
   if (!screenPos.visible) return null;
 
